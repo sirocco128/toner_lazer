@@ -182,6 +182,21 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"],
     remotePatterns,
   },
+  /** Gift-set pages from the baseline are parked; send visitors to the toner finder. */
+  async redirects() {
+    const parked = [
+      "/premium-giftset",
+      "/ideas",
+      "/ideas/:slug",
+      "/customize-gift-set",
+      "/portfolio",
+      "/portfolio/:slug",
+      "/giftset/:category",
+      "/catalog",
+      "/catalog/:category",
+    ];
+    return parked.map((source) => ({ source, destination: "/toner", permanent: false }));
+  },
   async headers() {
     /** @type {{ key: string; value: string }[]} */
     const securityHeaders = [

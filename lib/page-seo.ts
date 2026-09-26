@@ -38,13 +38,26 @@ const INDEXABLE_STATICS: CatalogSeoPage[] = [
     path: "/",
     label: "หน้าแรก",
     kind: "static",
-    keywords: ["ของขวัญองค์กร", "gift set", "สกรีนโลโก้", "สั่งผลิตจากจีน"],
+    keywords: ["หมึกเทียบเท่า", "โทนเนอร์", "หมึกเลเซอร์", "หมึกพิมพ์ราชการ"],
     seo: {
-      seoTitle: "Smart Gift ของพรีเมียมครบทุกหมวด",
+      seoTitle: "Toner Lazer ตลับหมึกเลเซอร์เทียบเท่าสำหรับองค์กร",
       metaDescription:
-        "Smart Gift รวมของพรีเมียมสำหรับทุกแบรนด์และทุกแคมเปญ สกรีนโลโก้ได้ สั่งผลิตตามแบบจากจีน ขอใบเสนอราคาได้โดยไม่ต้องชำระเงินบนเว็บ",
+        "ตลับหมึกเลเซอร์เทียบเท่าสำหรับองค์กรและหน่วยงานรัฐ ครบ HP Brother Samsung ประหยัดกว่าของแท้ เอกสารยื่นงานรัฐครบ ออกใบกำกับภาษีได้ ขอใบเสนอราคาทันที",
       canonicalPath: "/",
-      ogImage: "/images/hero-giftset.jpg",
+      ogImage: "/images/product-placeholder.jpg",
+    },
+  },
+  {
+    path: "/toner",
+    label: "ค้นหาหมึกตามรุ่นเครื่อง",
+    kind: "static",
+    keywords: ["หมึก HP 85A เทียบเท่า", "TN-2380 เทียบเท่า", "หมึกเลเซอร์เทียบเท่า"],
+    seo: {
+      seoTitle: "ค้นหาตลับหมึกเลเซอร์เทียบเท่าตามรุ่นเครื่องพิมพ์",
+      metaDescription:
+        "ค้นหาตลับหมึกเลเซอร์เทียบเท่าจากรุ่นเครื่องพิมพ์ HP Brother Samsung ดูจำนวนแผ่นที่พิมพ์ได้ ราคาต่อตลับและต่อหน้า แล้วขอใบเสนอราคาสำหรับหน่วยงานได้ทันที",
+      canonicalPath: "/toner",
+      ogImage: "/images/product-placeholder.jpg",
     },
   },
   {

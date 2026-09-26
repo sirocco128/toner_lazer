@@ -12,7 +12,7 @@ import { getPublicContact } from "@/lib/public-contact";
 import { buildBreadcrumbJsonLd } from "@/lib/seo";
 import { metadataForPath } from "@/lib/page-seo";
 import { site } from "@/lib/site";
-import { SMART_GIFT_TAGLINE_EN, SMART_GIFT_TAGLINE_TH } from "@/lib/smart-gift-method";
+import { TONER_PROMISE, TONER_TAGLINE_EN } from "@/lib/toner-copy";
 
 export async function generateMetadata(): Promise<Metadata> {
   return metadataForPath("/about");
@@ -39,19 +39,19 @@ export default function AboutPage() {
         <div className="mx-auto grid max-w-content items-center gap-8 px-page py-10 sm:py-14 lg:grid-cols-2">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-brass">
-              {SMART_GIFT_TAGLINE_EN}
+              {TONER_TAGLINE_EN}
             </p>
             <h1 className="mt-2 max-w-2xl text-3xl font-bold leading-tight text-forest sm:text-4xl md:text-5xl">
               เกี่ยวกับ {COMPANY.brandName}
             </h1>
             <p className="mt-3 max-w-xl text-sm text-ink/75 sm:text-base">
-              {SMART_GIFT_TAGLINE_TH}
+              {TONER_PROMISE}
             </p>
           </div>
           <div className="media-frame media-frame--hero rounded-3xl bg-paper shadow-lift">
             <Image
               src="/images/about-facility.jpg"
-              alt="พื้นที่ทำงานของ Smart Gift สำหรับของพรีเมียมองค์กร"
+              alt={`สำนักงานของ ${COMPANY.brandName}`}
               fill
               priority
               className="object-cover object-[center_38%]"
@@ -66,9 +66,9 @@ export default function AboutPage() {
 
         <section className="max-w-3xl">
           <p className="text-base leading-relaxed text-ink/80">
-            {COMPANY.brandName} รับทำของพรีเมียมให้ของขวัญองค์กร สินค้าขายปลีก
-            แคมเปญ อีเวนต์ งานภาครัฐ และของพนักงาน สกรีนโลโก้และสั่งผลิตตามแบบจากจีน
-            ใบกำกับภาษีออกในนาม {COMPANY.legalName}
+            {COMPANY.brandName} จำหน่ายตลับหมึกเลเซอร์เทียบเท่าสำหรับองค์กรและหน่วยงานรัฐ
+            ครบ HP Brother Samsung พร้อมเอกสารสำหรับจัดซื้อจัดจ้าง รับประกันคุณภาพ
+            และจัดส่งถึงหน่วยงาน ใบกำกับภาษีออกในนาม {COMPANY.legalName}
           </p>
         </section>
 

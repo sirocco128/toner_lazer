@@ -44,7 +44,7 @@ function siteWith(
 
 describe("company identity (non-product)", () => {
   it("uses บริษัท เทราบิส จำกัด and DBD tax ID", () => {
-    assert.equal(COMPANY.brandName, "Smart Gift");
+    assert.equal(COMPANY.brandName, "Toner Lazer");
     assert.equal(COMPANY.legalName, "บริษัท เทราบิส จำกัด");
     assert.equal(COMPANY.legalNameEn, "Terabiz Company Limited");
     assert.equal(COMPANY.taxId, "0105556003873");

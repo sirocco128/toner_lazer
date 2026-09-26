@@ -16,29 +16,26 @@ describe("nav helpers (UX)", () => {
 
   it("keeps four buyer destinations in the primary nav", () => {
     const links = withOptionalBasketLink(false);
-    assert.equal(links.some((l) => l.href === "/about"), true);
+    assert.equal(links.length, 4);
+    assert.equal(links[0]?.href, "/toner");
+    assert.match(links[0]?.label || "", /รุ่นเครื่อง/);
     assert.equal(
       links.find((l) => l.href === "/about")?.label,
       "เกี่ยวกับเรา",
     );
+    assert.equal(links.some((l) => l.href === "/premium-giftset"), false);
     assert.equal(links.some((l) => l.href === "/ideas"), false);
-    assert.equal(links.some((l) => l.href === "/catalog"), false);
-    assert.equal(
-      links.find((l) => l.href === "/premium-giftset")?.label,
-      "ชุดของขวัญองค์กร",
-    );
     assert.match(
       links.find((l) => l.href === "/products")?.hint || "",
       /ขอราคา/,
     );
   });
 
-  it("parks flipbook and ideas under more nav", () => {
+  it("parks claims and contact under more nav, no gift pages", () => {
     const more = moreNavLinks();
-    assert.equal(more.find((l) => l.href === "/ideas")?.label, "ไอเดียชุดของขวัญ");
-    assert.equal(more.find((l) => l.href === "/catalog")?.label, "สมุดพลิกดู");
-    assert.match(more.find((l) => l.href === "/catalog")?.hint || "", /พลิกดู/);
-    assert.equal(isMoreNavActive("/catalog"), true);
+    assert.equal(more.find((l) => l.href === "/issues")?.label, "แจ้งปัญหา / เคลมสินค้า");
+    assert.equal(more.some((l) => l.href === "/ideas" || l.href === "/catalog"), false);
+    assert.equal(isMoreNavActive("/issues"), true);
     assert.equal(isMoreNavActive("/products"), false);
   });
 

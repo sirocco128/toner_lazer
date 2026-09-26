@@ -1,29 +1,38 @@
-import { SMART_GIFT_PARTNER_POINTS } from "@/lib/smart-gift-method";
+import { TONER_SERVICE_POINTS } from "@/lib/toner-copy";
 
 /**
- * Public brand is Smart Gift. The registered juristic person, tax ID, and
- * address stay บริษัท เทราบิส จำกัด (DBD 0105556003873) so invoices and
- * payment slips match the bank account. Do not invent phone, email, or LINE.
+ * Public brand defaults to Toner Lazer. The juristic person printed on tax
+ * invoices, receipts and PromptPay (legal name, tax ID, address) is read from
+ * COMPANY_* env vars. Until those are set it falls back to the entity the
+ * baseline was built for (บริษัท เทราบิส จำกัด) — set the real toner company
+ * before issuing any invoice. Do not invent phone, email, or LINE.
  */
 
+function envOr(key: string, fallback: string): string {
+  const value = (process.env[key] ?? "").trim();
+  return value || fallback;
+}
+
 export const COMPANY = {
-  brandName: "Smart Gift",
-  legalName: "บริษัท เทราบิส จำกัด",
-  legalNameEn: "Terabiz Company Limited",
-  taxId: "0105556003873",
-  registeredOn: "2013-01-09",
-  registeredOnTh: "9 มกราคม 2556",
-  streetAddress: "50/238 ซอยประชาอุทิศ 72",
-  locality: "แขวงทุ่งครุ",
-  region: "เขตทุ่งครุ กรุงเทพมหานคร",
-  postalCode: "10140",
+  brandName: envOr("COMPANY_BRAND_NAME", "Toner Lazer"),
+  legalName: envOr("COMPANY_LEGAL_NAME", "บริษัท เทราบิส จำกัด"),
+  legalNameEn: envOr("COMPANY_LEGAL_NAME_EN", "Terabiz Company Limited"),
+  taxId: envOr("COMPANY_TAX_ID", "0105556003873"),
+  registeredOn: envOr("COMPANY_REGISTERED_ON", "2013-01-09"),
+  registeredOnTh: envOr("COMPANY_REGISTERED_ON_TH", "9 มกราคม 2556"),
+  streetAddress: envOr("COMPANY_STREET_ADDRESS", "50/238 ซอยประชาอุทิศ 72"),
+  locality: envOr("COMPANY_LOCALITY", "แขวงทุ่งครุ"),
+  region: envOr("COMPANY_REGION", "เขตทุ่งครุ กรุงเทพมหานคร"),
+  postalCode: envOr("COMPANY_POSTAL_CODE", "10140"),
   countryCode: "TH",
   countryTh: "ประเทศไทย",
-  description:
-    "ของพรีเมียมครบทุกหมวดสำหรับทุกแบรนด์และทุกแคมเปญ สกรีนโลโก้ได้ สั่งผลิตตามแบบจากจีน แล้วขอใบเสนอราคา",
-} as const;
+  description: envOr(
+    "COMPANY_DESCRIPTION",
+    "ตลับหมึกเลเซอร์เทียบเท่าสำหรับองค์กรและหน่วยงานรัฐ ครบ HP Brother Samsung ประหยัดกว่าของแท้ เอกสารยื่นงานรัฐครบ ออกใบกำกับภาษีได้",
+  ),
+};
 
-export const COMPANY_SERVICES = SMART_GIFT_PARTNER_POINTS;
+export const COMPANY_SERVICES = TONER_SERVICE_POINTS;
 
 export function formatRegisteredAddress(parts?: {
   streetAddress?: string;

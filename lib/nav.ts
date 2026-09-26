@@ -27,26 +27,24 @@ export const STAFF_LOGIN_HREF = "/ops/login";
 
 /** First-time buyer destinations — keep short so the quote CTA stays in view. */
 export const PRIMARY_NAV_LINKS: NavLinkItem[] = [
-  { href: "/premium-giftset", label: "ชุดของขวัญองค์กร" },
+  {
+    href: "/toner",
+    label: "ค้นหาหมึกตามรุ่นเครื่อง",
+    hint: "พิมพ์รุ่นเครื่องพิมพ์หรือรหัสตลับ",
+  },
   {
     href: "/products",
-    label: "สินค้าพรีเมียม",
-    hint: "เลือกเซ็ตแล้วขอราคา",
+    label: "สินค้าทั้งหมด",
+    hint: "เลือกรุ่นแล้วขอราคา",
   },
   { href: "/about", label: "เกี่ยวกับเรา" },
   { href: "/blog", label: "บทความ" },
 ];
 
-/** Browse/inspiration — parked under “ดูเพิ่ม” so primary chrome stays scannable. */
+/** Secondary links under “ดูเพิ่ม”. */
 export const MORE_NAV_LINKS: NavLinkItem[] = [
-  {
-    href: "/catalog",
-    label: "สมุดพลิกดู",
-    hint: "พลิกดูแคตตาล็อก ไม่ใช่รายการขอราคา",
-  },
-  { href: "/ideas", label: "ไอเดียชุดของขวัญ" },
-  { href: "/customize-gift-set", label: "ออกแบบเซ็ตเอง" },
-  { href: "/portfolio", label: "ผลงาน" },
+  { href: "/issues", label: "แจ้งปัญหา / เคลมสินค้า" },
+  { href: "/contact?intent=message", label: "ติดต่อเรา" },
 ];
 
 export function withOptionalBasketLink(

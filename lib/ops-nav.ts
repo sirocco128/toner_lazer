@@ -81,6 +81,7 @@ export function buildOpsNavLinks(actor: OpsActor): OpsNavLink[] {
     links.push({ href: "/ops/claims", label: "เคลม", group: "cycle" });
   }
   if (actorMay(actor, "factory.read")) {
+    links.push({ href: "/ops/dropship", label: "ใบสั่งส่งตรง (Dropship)", group: "cycle" });
     links.push({ href: "/ops/factory-po", label: "ใบสั่งโรงงาน", group: "cycle" });
     links.push({ href: "/ops/factories", label: "ทะเบียนโรงงาน", group: "cycle" });
   }

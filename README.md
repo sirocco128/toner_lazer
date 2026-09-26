@@ -1,3 +1,54 @@
+# toner_lazer — ระบบขายหมึกเลเซอร์เทียบเท่าสำหรับองค์กรและหน่วยงานรัฐ
+
+B2B Portal + backoffice สำหรับธุรกิจตลับหมึกเลเซอร์เทียบเท่า (private label, ซัพพลายเออร์ Color Fly แบบ dropship)
+ต่อยอดจาก `premium-giftset-web` ([sirocco128/mcp-alibaba](https://github.com/sirocco128/mcp-alibaba)) และส่งข้อมูลเข้า **NEXTERP** เป็นศูนย์กลางข้อมูลของกลุ่ม
+
+## สถานะ
+
+| ส่วน | สถานะ |
+|------|--------|
+| Baseline จาก premium-giftset-web (quote, order, ลูกค้า, เอกสารภาษีไทย, PromptPay, LINE OA, ops console) | ✅ นำเข้าแล้ว |
+| แคตตาล็อกโทนเนอร์ 11 รุ่น (HP / Brother / Samsung) + ราคา 3 ระดับ | ✅ `lib/toner-catalog.ts` |
+| ค้นหาตลับจากรุ่นเครื่องพิมพ์ / รหัสตลับ | ✅ `findToner()` |
+| ส่งหมวดและสินค้าเข้า NEXTERP (MySQL) | ✅ `npm run toner:nexterp` |
+| แสดงสินค้าโทนเนอร์จาก NEXTERP บนเว็บ (ราคาเดียว, สั่งขั้นต่ำ 1 ตลับ) | ✅ `lib/nexterp-products.ts` |
+| ตัดโมดูลของขวัญ (mockup, สกรีนโลโก้, 1688) และเปลี่ยนแบรนด์ | ⏳ ถัดไป |
+| Dropship PO ไป Color Fly, เครดิตภาครัฐ 30–90 วัน, Tender Tracker (e-GP) | ⏳ ถัดไป |
+| ย้ายฐานข้อมูลหลักจาก SQLite ไป MySQL | ⏳ ก่อนขึ้น production |
+
+## ต้นทุนและราคา
+
+ต้นทุน = ราคาออนไลน์ Advice × (1 − ส่วนลดซัพพลายเออร์) + ค่ากล่อง แล้วตั้งราคาตามกำไรขั้นต้น (ปัดขึ้นทีละ 10 บาท)
+
+| ระดับ | กำไรขั้นต้น | ใช้กับ |
+|------|------|------|
+| direct | 60% | ภาครัฐ / องค์กร (ค่าที่ส่งเข้า NEXTERP `sell_price`) |
+| economy | 50% | SME / โรงเรียน |
+| dealer | 12% | ตัวแทน — ถูกบังคับให้ต่ำกว่าราคา Advice เสมอ |
+
+ค่าเริ่มต้น: ส่วนลด 20%, กล่อง 10 บาท — เปลี่ยนได้ด้วย `TONER_SUPPLIER_DISCOUNT`, `TONER_BOX_COST_THB`, `TONER_*_MARGIN` (ดู `.env.example`)
+ราคา Advice อ้างอิงวันที่ 2026-09-26
+
+## ส่งข้อมูลเข้า NEXTERP
+
+ตั้งค่า `NEXTERP_MYSQL_*` (หรือ `NEXTERP_MYSQL_URL`) ใน `.env.local` แล้ว:
+
+```bash
+npm run toner:nexterp               # dry run — แสดงแผน ไม่เขียนอะไร
+npm run toner:nexterp -- --apply    # เขียนใน transaction เดียว
+npm run toner:nexterp -- --json     # แผนแบบ JSON
+```
+
+- สร้างหมวด `TONER_HP`, `TONER_BROTHER`, `TONER_SAMSUNG` ในตาราง `categories`
+- upsert สินค้าในตาราง `products` โดยจับคู่ด้วย `sku` (`TL-HP-CE285A` ฯลฯ) — รันซ้ำได้ ไม่สร้างซ้ำ ไม่ลบข้อมูลเดิม
+- ตรวจก่อนเขียน: ถ้า NEXTERP มีคอลัมน์ NOT NULL ที่ไม่มีค่า default ซึ่งสคริปต์ไม่ได้ใส่ (เช่น `tenant_id`) จะหยุดทันทีโดยไม่เขียน
+
+ทดสอบกับ MariaDB แล้ว: insert → รันซ้ำไม่เปลี่ยน → เปลี่ยนส่วนลดแล้วอัปเดตเฉพาะ `sell_price` → หยุดเมื่อมีคอลัมน์บังคับที่ไม่รู้จัก
+
+---
+
+# Baseline: premium-giftset-web
+
 # Premium Gift Set Starter — v1.1 Production
 
 B2B website for corporate gift-set manufacturing (Next.js 15 App Router, Node.js 22+).

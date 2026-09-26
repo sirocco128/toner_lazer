@@ -45,7 +45,8 @@
     "minio:down": "docker compose stop minio minio-replica minio-mirror",
     "vault:up": "docker compose up -d minio minio-replica minio-init minio-mirror clamav",
     "cms:media:minio": "node scripts/migrate-strapi-media-to-minio.mjs",
-    "sop:screenshots": "node --experimental-strip-types scripts/capture-sop-screenshots.mjs"
+    "sop:screenshots": "node --experimental-strip-types scripts/capture-sop-screenshots.mjs",
+    "toner:nexterp": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/sync-toner-nexterp.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

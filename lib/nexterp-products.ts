@@ -64,9 +64,22 @@ export function skuToSlug(sku: string): string {
   return base || "product";
 }
 
+/** Toner categories are pushed by scripts/sync-toner-nexterp.mjs as TONER_<BRAND>. */
+export function isTonerCategoryCode(code: string | null | undefined): boolean {
+  return Boolean(code && code.toUpperCase().startsWith("TONER"));
+}
+
+const TONER_CATEGORY_SLUGS: Record<string, string> = {
+  TONER_HP: "toner-hp",
+  TONER_BROTHER: "toner-brother",
+  TONER_SAMSUNG: "toner-samsung",
+};
+
 export function categoryCodeToSlug(code: string | null | undefined): string {
   if (!code) return "tumbler-set";
-  return CATEGORY_CODE_TO_SLUG[code.toUpperCase()] || "tumbler-set";
+  const upper = code.toUpperCase();
+  if (isTonerCategoryCode(upper)) return TONER_CATEGORY_SLUGS[upper] || "toner";
+  return CATEGORY_CODE_TO_SLUG[upper] || "tumbler-set";
 }
 
 function toNumber(value: number | string | null | undefined): number | null {
@@ -88,7 +101,42 @@ function looksLikeTumblerSet(name: string): boolean {
   return /กระบอก|แก้ว|tumbler|bottle|น้ำ|สมุด|ปากกา/i.test(name);
 }
 
+function adaptNexterpTonerProduct(row: NexterpProductRow): Product {
+  const slug = skuToSlug(row.sku);
+  const categorySlug = categoryCodeToSlug(row.category_code);
+  const sell = toNumber(row.sell_price);
+  const description =
+    (row.description || "").trim() ||
+    `${row.name} (รหัส ${row.sku}) — ตลับหมึกเลเซอร์เทียบเท่า รับประกันคุณภาพ ออกใบกำกับภาษีได้`;
+  const image = "/images/product-placeholder.jpg";
+  return {
+    name: row.name,
+    slug,
+    description,
+    material: row.uom ? `หน่วย: ${row.uom}` : "หน่วย: ตลับ",
+    minOrder: 1,
+    priceRange:
+      sell != null ? formatPriceRange(sell, sell) : "สอบถามราคา / ขอใบเสนอราคา",
+    priceMin: sell ?? 0,
+    priceMax: sell ?? 0,
+    currency: "THB",
+    images: [image],
+    categorySlug,
+    categoryName: row.category_name_th || undefined,
+    productId: row.sku,
+    enableCustomDesign: false,
+    customDesignPreset: "product_photo",
+    seo: {
+      seoTitle: row.name.slice(0, 60),
+      metaDescription: description.slice(0, 155),
+      canonicalPath: `/products/${slug}`,
+      ogImage: image,
+    },
+  };
+}
+
 export function adaptNexterpProduct(row: NexterpProductRow): Product {
+  if (isTonerCategoryCode(row.category_code)) return adaptNexterpTonerProduct(row);
   const slug = skuToSlug(row.sku);
   const categorySlug = categoryCodeToSlug(row.category_code);
   const sell = toNumber(row.sell_price);
@@ -130,6 +178,21 @@ export function adaptNexterpProduct(row: NexterpProductRow): Product {
 
 export function adaptNexterpCategory(row: NexterpCategoryRow): Category {
   const slug = categoryCodeToSlug(row.code);
+  if (isTonerCategoryCode(row.code)) {
+    const heroImage = "/images/product-placeholder.jpg";
+    return {
+      name: row.name_th,
+      slug,
+      description: `${row.name_th} (${row.product_count} รุ่น) — ค้นหาตามรุ่นเครื่องพิมพ์ ออกใบกำกับภาษีได้`,
+      heroImage,
+      seo: {
+        seoTitle: row.name_th,
+        metaDescription: `${row.name_th} ประหยัดกว่าของแท้ รับประกันคุณภาพ ส่งถึงหน่วยงาน`,
+        canonicalPath: `/giftset/${slug}`,
+        ogImage: heroImage,
+      },
+    };
+  }
   const heroImage = CATEGORY_IMAGE[slug] || "/images/category-tumbler.jpg";
   return {
     name: row.name_th,

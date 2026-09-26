@@ -1,0 +1,56 @@
+{
+  "comment": "Copy to data/1688-offers.json (gitignored). Factory CNY + dims drive SmartGift landed THB. Live 1688 fetch overwrites factory prices when --fetch and App Key are set.",
+  "offers": [
+    {
+      "slug": "tumbler-notebook-pen-set",
+      "offerId": "REPLACE_1688_OFFER_ID",
+      "origin": "guangzhou_shenzhen",
+      "category": "general",
+      "minOrder": 30,
+      "factoryMinCny": 28,
+      "factoryMaxCny": 45,
+      "weightKg": 0.45,
+      "lengthCm": 22,
+      "widthCm": 10,
+      "heightCm": 10,
+      "bulkQty": 300,
+      "imageUrls": [
+        "https://cbu01.alicdn.com/kf/example-tumbler.jpg"
+      ]
+    },
+    {
+      "slug": "eco-tote-bamboo-set",
+      "offerId": "REPLACE_1688_OFFER_ID_ECO",
+      "origin": "yiwu",
+      "category": "general",
+      "minOrder": 50,
+      "factoryMinCny": 12,
+      "factoryMaxCny": 22,
+      "weightKg": 0.28,
+      "lengthCm": 30,
+      "widthCm": 25,
+      "heightCm": 4,
+      "bulkQty": 300,
+      "imageUrls": [
+        "https://cbu01.alicdn.com/kf/example-eco.jpg"
+      ]
+    },
+    {
+      "slug": "it-powerbank-set",
+      "offerId": "REPLACE_1688_OFFER_ID_IT",
+      "origin": "guangzhou_shenzhen",
+      "category": "electronic_tisi",
+      "minOrder": 50,
+      "factoryMinCny": 38,
+      "factoryMaxCny": 62,
+      "weightKg": 0.35,
+      "lengthCm": 16,
+      "widthCm": 8,
+      "heightCm": 3,
+      "bulkQty": 300,
+      "imageUrls": [
+        "https://cbu01.alicdn.com/kf/example-powerbank.jpg"
+      ]
+    }
+  ]
+}

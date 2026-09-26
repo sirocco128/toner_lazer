@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "version": "1",
+    "updatedAt": "",
+    "notes": "Copy to sprint2-intake.json and fill Value fields. Do not commit sprint2-intake.json until secrets are managed via deploy secret store."
+  },
+  "business": {
+    "brandName": { "value": "", "owner": "Business / PO", "status": "PENDING" },
+    "legalName": { "value": "", "owner": "Business / PO", "status": "PENDING" },
+    "taxId": { "value": "", "owner": "Business / Finance", "status": "PENDING" },
+    "streetAddress": { "value": "", "owner": "Business / PO", "status": "PENDING" },
+    "addressLocality": { "value": "", "owner": "Business / PO", "status": "PENDING" },
+    "addressRegion": { "value": "", "owner": "Business / PO", "status": "PENDING" },
+    "postalCode": { "value": "", "owner": "Business / PO", "status": "PENDING" },
+    "countryCode": { "value": "TH", "owner": "Business / PO", "status": "PENDING" },
+    "phoneDisplay": { "value": "", "owner": "Business / Sales", "status": "PENDING" },
+    "phoneHref": { "value": "", "owner": "Business / Sales", "status": "PENDING" },
+    "email": { "value": "", "owner": "Business / Sales", "status": "PENDING" },
+    "lineId": { "value": "", "owner": "Business / Marketing", "status": "PENDING" },
+    "lineUrl": { "value": "", "owner": "Business / Marketing", "status": "PENDING" },
+    "openingHours": { "value": "", "owner": "Business / Sales", "status": "PENDING" },
+    "siteDescription": { "value": "", "owner": "Business / Marketing", "status": "PENDING" }
+  },
+  "technical": {
+    "siteUrl": { "value": "", "owner": "IT / DevOps", "status": "PENDING" },
+    "cmsMode": { "value": "strapi", "owner": "IT / DevOps", "status": "PENDING" },
+    "strapiUrl": { "value": "", "owner": "IT / DevOps", "status": "PENDING" },
+    "strapiApiToken": { "value": "", "owner": "IT / DevOps", "status": "PENDING" },
+    "revalidateSecret": { "value": "", "owner": "IT / DevOps", "status": "PENDING" },
+    "nextImageRemoteUrls": { "value": "", "owner": "IT / Cloud", "status": "PENDING" },
+    "ipHashSecret": { "value": "", "owner": "IT / Security", "status": "PENDING" }
+  },
+  "gates": {
+    "legalContentApproved": { "value": false, "owner": "Legal / DPO", "status": "PENDING" },
+    "realAssetsApproved": { "value": false, "owner": "Marketing / Legal", "status": "PENDING" },
+    "allowIndexing": { "value": false, "owner": "Business / PO", "status": "PENDING" }
+  },
+  "content": {
+    "productCatalogReady": { "value": false, "owner": "Marketing / Editor", "status": "PENDING" },
+    "portfolioPermissionReady": { "value": false, "owner": "Marketing / Legal", "status": "PENDING" },
+    "faqApproved": { "value": false, "owner": "Marketing / Sales", "status": "PENDING" },
+    "legalPagesApproved": { "value": false, "owner": "Legal / DPO", "status": "PENDING" }
+  }
+}

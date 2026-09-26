@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "version": "1",
+    "updatedAt": "2026-09-03",
+    "notes": "STAGING REHEARSAL ONLY — demo values, not production. Committed as reference; copy to sprint2-intake.json for local apply."
+  },
+  "business": {
+    "brandName": {
+      "value": "GiftPro Asia (Staging Demo)",
+      "owner": "Business / PO",
+      "status": "APPROVED"
+    },
+    "legalName": {
+      "value": "บริษัท ตัวอย่าง Staging จำกัด",
+      "owner": "Business / PO",
+      "status": "APPROVED"
+    },
+    "taxId": { "value": "", "owner": "Business / Finance", "status": "PENDING" },
+    "streetAddress": { "value": "", "owner": "Business / PO", "status": "PENDING" },
+    "addressLocality": { "value": "Bangkok", "owner": "Business / PO", "status": "APPROVED" },
+    "addressRegion": { "value": "Bangkok", "owner": "Business / PO", "status": "APPROVED" },
+    "postalCode": { "value": "10110", "owner": "Business / PO", "status": "APPROVED" },
+    "countryCode": { "value": "TH", "owner": "Business / PO", "status": "APPROVED" },
+    "phoneDisplay": {
+      "value": "02-000-0000",
+      "owner": "Business / Sales",
+      "status": "APPROVED"
+    },
+    "phoneHref": {
+      "value": "tel:+6620000000",
+      "owner": "Business / Sales",
+      "status": "APPROVED"
+    },
+    "email": {
+      "value": "staging-demo@example.com",
+      "owner": "Business / Sales",
+      "status": "APPROVED"
+    },
+    "lineId": {
+      "value": "@giftproasia",
+      "owner": "Business / Marketing",
+      "status": "APPROVED"
+    },
+    "lineUrl": {
+      "value": "https://line.me/R/ti/p/@giftproasia",
+      "owner": "Business / Marketing",
+      "status": "APPROVED"
+    },
+    "openingHours": {
+      "value": "Mo-Sa 08:30-17:30",
+      "owner": "Business / Sales",
+      "status": "APPROVED"
+    },
+    "siteDescription": {
+      "value": "สภาพแวดล้อม staging สำหรับทดสอบ Gift Set B2B — ไม่ใช่ข้อมูล production",
+      "owner": "Business / Marketing",
+      "status": "APPROVED"
+    }
+  },
+  "technical": {
+    "siteUrl": {
+      "value": "http://localhost:3001",
+      "owner": "IT / DevOps",
+      "status": "APPROVED"
+    },
+    "cmsMode": { "value": "mock", "owner": "IT / DevOps", "status": "APPROVED" },
+    "strapiUrl": {
+      "value": "http://host.docker.internal:1337",
+      "owner": "IT / DevOps",
+      "status": "APPROVED"
+    },
+    "strapiApiToken": {
+      "value": "staging-demo-read-token-not-for-production-use",
+      "owner": "IT / DevOps",
+      "status": "APPROVED"
+    },
+    "revalidateSecret": {
+      "value": "staging-revalidate-secret-min-32-characters-demo",
+      "owner": "IT / DevOps",
+      "status": "APPROVED"
+    },
+    "nextImageRemoteUrls": { "value": "", "owner": "IT / Cloud", "status": "PENDING" },
+    "ipHashSecret": {
+      "value": "staging-ip-hash-secret-min-32-characters-demo",
+      "owner": "IT / Security",
+      "status": "APPROVED"
+    }
+  },
+  "gates": {
+    "legalContentApproved": {
+      "value": false,
+      "owner": "Legal / DPO",
+      "status": "PENDING"
+    },
+    "realAssetsApproved": {
+      "value": false,
+      "owner": "Marketing / Legal",
+      "status": "PENDING"
+    },
+    "allowIndexing": {
+      "value": false,
+      "owner": "Business / PO",
+      "status": "APPROVED"
+    }
+  },
+  "content": {
+    "productCatalogReady": {
+      "value": true,
+      "owner": "Marketing / Editor",
+      "status": "RECEIVED"
+    },
+    "portfolioPermissionReady": {
+      "value": false,
+      "owner": "Marketing / Legal",
+      "status": "PENDING"
+    },
+    "faqApproved": {
+      "value": true,
+      "owner": "Marketing / Sales",
+      "status": "RECEIVED"
+    },
+    "legalPagesApproved": {
+      "value": false,
+      "owner": "Legal / DPO",
+      "status": "PENDING"
+    }
+  }
+}

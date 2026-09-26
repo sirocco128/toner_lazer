@@ -1,0 +1,36 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 3,
+      "startServerCommand": "npm run start",
+      "startServerReadyPattern": "Ready|started server|Local:",
+      "url": [
+        "http://127.0.0.1:3000/",
+        "http://127.0.0.1:3000/premium-giftset",
+        "http://127.0.0.1:3000/products/tumbler-notebook-pen-set",
+        "http://127.0.0.1:3000/customize-gift-set",
+        "http://127.0.0.1:3000/portfolio",
+        "http://127.0.0.1:3000/contact"
+      ]
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.85 }],
+        "categories:accessibility": ["error", { "minScore": 0.9 }],
+        "categories:best-practices": ["warn", { "minScore": 0.9 }],
+        "categories:seo": "off",
+        "is-crawlable": "off",
+        "document-title": "error",
+        "meta-description": "error",
+        "http-status-code": "error",
+        "link-text": "error",
+        "crawlable-anchors": "error",
+        "image-alt": "error"
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": ".lighthouseci"
+    }
+  }
+}

@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>บรรยายผู้บริหาร — คู่มือการทำงาน Ops · Premium Gift Set Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --forest: #2d4a2b;
+      --forest-deep: #1c2f1b;
+      --sage: #7d8471;
+      --olive: #a4ac86;
+      --ivory: #faf9f6;
+      --brass: #b08a3e;
+      --ink: #1a2218;
+      --muted: #5a6356;
+      --card: #ffffff;
+      --danger: #8b3a3a;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--forest-deep);
+      color: var(--ink);
+      font-family: "IBM Plex Sans Thai", "Segoe UI", sans-serif;
+      font-size: 18px;
+      line-height: 1.45;
+    }
+    .deck {
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+    .slide {
+      display: none;
+      height: 100%;
+      padding: 3.2rem 4rem 4.5rem;
+      background:
+        radial-gradient(ellipse at 12% 0%, rgba(176,138,62,0.18), transparent 42%),
+        linear-gradient(145deg, var(--ivory) 0%, #f3f1ea 55%, #ebe8df 100%);
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .slide.active { display: flex; }
+    .slide.dark {
+      background:
+        radial-gradient(ellipse at 80% 10%, rgba(176,138,62,0.22), transparent 40%),
+        linear-gradient(160deg, var(--forest-deep) 0%, var(--forest) 55%, #243d22 100%);
+      color: var(--ivory);
+    }
+    .eyebrow {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--brass);
+      margin: 0 0 0.75rem;
+    }
+    .slide.dark .eyebrow { color: var(--olive); }
+    h1, h2, h3 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 0;
+    }
+    h1 { font-size: clamp(2.2rem, 4vw, 3.4rem); max-width: 18ch; }
+    h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); color: var(--forest); margin-bottom: 1rem; }
+    .slide.dark h2 { color: var(--ivory); }
+    .lede {
+      margin-top: 1.1rem;
+      font-size: 1.15rem;
+      max-width: 42rem;
+      color: var(--muted);
+    }
+    .slide.dark .lede { color: rgba(250,249,246,0.78); }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1.4rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(45,74,43,0.12);
+      border-radius: 14px;
+      padding: 1.1rem 1.2rem;
+      box-shadow: 0 10px 30px -22px rgba(28,47,27,0.55);
+    }
+    .slide.dark .card {
+      background: rgba(250,249,246,0.08);
+      border-color: rgba(250,249,246,0.14);
+      color: var(--ivory);
+      box-shadow: none;
+    }
+    .card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 0.45rem;
+      color: var(--forest);
+    }
+    .slide.dark .card h3 { color: var(--olive); }
+    .card p, .card li { font-size: 0.95rem; color: var(--muted); }
+    .slide.dark .card p, .slide.dark .card li { color: rgba(250,249,246,0.78); }
+    ul { margin: 0.4rem 0 0; padding-left: 1.15rem; }
+    li { margin: 0.28rem 0; }
+    .kpi {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--forest);
+      line-height: 1;
+    }
+    .slide.dark .kpi { color: var(--brass); }
+    .kpi span { display: block; margin-top: 0.45rem; font-family: "IBM Plex Sans Thai", sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--muted); }
+    .slide.dark .kpi span { color: rgba(250,249,246,0.7); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      border-bottom: 1px solid rgba(45,74,43,0.12);
+      padding: 0.65rem 0.8rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: rgba(45,74,43,0.08);
+      color: var(--forest);
+      font-weight: 600;
+    }
+    .tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 0.15rem 0.55rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: rgba(176,138,62,0.18);
+      color: #6d5420;
+    }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 1.2rem;
+    }
+    .flow .step {
+      background: var(--forest);
+      color: var(--ivory);
+      border-radius: 999px;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .flow .arrow { color: var(--brass); font-weight: 700; }
+    .footer-bar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 1.25rem;
+      background: rgba(28,47,27,0.92);
+      color: rgba(250,249,246,0.75);
+      font-size: 0.78rem;
+      z-index: 20;
+      backdrop-filter: blur(8px);
+    }
+    .footer-bar button {
+      appearance: none;
+      border: 1px solid rgba(250,249,246,0.25);
+      background: transparent;
+      color: var(--ivory);
+      border-radius: 8px;
+      padding: 0.35rem 0.7rem;
+      cursor: pointer;
+      font: inherit;
+    }
+    .footer-bar button:hover { background: rgba(250,249,246,0.1); }
+    .meta-line { margin-top: auto; padding-top: 1.5rem; font-size: 0.85rem; color: var(--sage); }
+    .slide.dark .meta-line { color: rgba(250,249,246,0.55); }
+    .callout {
+      margin-top: 1.2rem;
+      border-left: 4px solid var(--brass);
+      padding: 0.8rem 1rem;
+      background: rgba(176,138,62,0.1);
+      border-radius: 0 10px 10px 0;
+      font-size: 0.98rem;
+    }
+    .slide.dark .callout {
+      background: rgba(176,138,62,0.15);
+      color: rgba(250,249,246,0.9);
+    }
+    .tiny { font-size: 0.82rem; color: var(--muted); }
+    .slide.dark .tiny { color: rgba(250,249,246,0.65); }
+    @media (max-width: 960px) {
+      .slide { padding: 1.5rem 1.25rem 4.5rem; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      h1 { max-width: none; }
+    }
+    @media print {
+      .footer-bar { display: none; }
+      .slide {
+        display: flex !important;
+        page-break-after: always;
+        height: auto;
+        min-height: 100vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <!-- 1 -->
+    <section class="slide dark active" data-title="ปก">
+      <p class="eyebrow">Terabis · SmartGift B2B · บรรยายผู้บริหาร</p>
+      <h1>คู่มือการทำงาน Ops ที่ผูกกับสิทธิ์พนักงาน</h1>
+      <p class="lede">
+        สรุปผลงานสร้าง SPA คู่มือการทำงานจากเอกสาร Markdown จริงในโปรเจกต์
+        พร้อมกรองเนื้อหาตาม role ของคอนโซลปฏิบัติการ — เพื่อลดความเสี่ยง อบรมเร็วขึ้น และควบคุมการเข้าถึงข้อมูลภายใน
+      </p>
+      <div class="meta-line">
+        Premium Gift Set Web · เอกสารชุด manual v1.0 · วันที่นำเสนอ 9 ก.ย. 2569 · กลุ่มเป้าหมาย: ผู้บริหาร / หัวหน้าฝ่าย
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide" data-title="วาระ">
+      <p class="eyebrow">01 · วาระการประชุม</p>
+      <h2>สิ่งที่ผู้บริหารควรได้จากรอบนี้</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>ภาพธุรกิจ</h3>
+          <ul>
+            <li>ทำไมต้องมีคู่มือการทำงานในระบบ ไม่ใช่ไฟล์แชร์อย่างเดียว</li>
+            <li>วงจรรายได้ RFQ → มัดจำ → โรงงาน → ส่งมอบ</li>
+            <li>ตำแหน่งของ Ops Console ในองค์กร</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>ผลงานที่ส่งมอบ</h3>
+          <ul>
+            <li>SPA `/ops/manual` อ่านเอกสารจาก `docs/**/*.md`</li>
+            <li>กรองเอกสารตามสิทธิ์พนักงาน (RBAC)</li>
+            <li>ชุดเอกสาร manual + SOP + matrix</li>
+            <li>UX เมนูซ้ายหดได้ เพื่อโฟกัสงาน</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>มูลค่า / ความเสี่ยง</h3>
+          <ul>
+            <li>ลดการเปิดเผยเอกสารผู้ดูแลให้เซลล์ทั่วไป</li>
+            <li>มาตรฐานอบรมและ audit ได้</li>
+            <li>ลดงานนอกระบบและความรู้ในหัวคนเดียว</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>คำขอตัดสินใจ</h3>
+          <ul>
+            <li>รับรองใช้ `/ops/manual` เป็นช่องทางคู่มือหลัก</li>
+            <li>กำหนดเจ้าของเอกสารแต่ละฝ่าย</li>
+            <li>รอบอัปเดตเอกสารเมื่อเพิ่มเมนูใหม่</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide" data-title="สรุปผู้บริหาร">
+      <p class="eyebrow">02 · Executive Summary</p>
+      <h2>สรุปหนึ่งหน้า</h2>
+      <div class="grid-3">
+        <div class="card">
+          <div class="kpi">1<span>แหล่งความจริงของคู่มือ</span></div>
+          <p>เอกสาร Markdown ใน repo คือต้นฉบับ — SPA อ่านตรงจากไฟล์ ไม่คัดลอกซ้ำในโค้ด</p>
+        </div>
+        <div class="card">
+          <div class="kpi">RBAC<span>สิทธิ์เดียวกับ Ops</span></div>
+          <p>ใช้ session พนักงานเดิม (`ops_session`) ไม่ต้องโทเค็นแยกสำหรับคู่มือหลัก</p>
+        </div>
+        <div class="card">
+          <div class="kpi">15+<span>เอกสารที่จัดกลุ่มแล้ว</span></div>
+          <p>คู่มือผู้ใช้ · workflow · SOP · กติกาบอร์ด · เอกสารผู้ดูแล — แสดงตามสิทธิ์</p>
+        </div>
+      </div>
+      <div class="callout">
+        <strong>ข้อความหลักสำหรับผู้บริหาร:</strong>
+        ทีมงานทำงานบนระบบเดียวกันกับลูกค้าองค์กร — และตอนนี้ “วิธีทำงาน” ก็อยู่ในระบบเดียวกัน โดยเปิดได้เฉพาะเอกสารที่บทบาทนั้นควรเห็น
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide" data-title="บริบทธุรกิจ">
+      <p class="eyebrow">03 · บริบทธุรกิจ</p>
+      <h2>ทำไมแพลตฟอร์มนี้สำคัญต่อรายได้</h2>
+      <p class="lede">Premium Gift Set เป็นธุรกิจ B2B ของขวัญองค์กร / สินค้าพรีเมียมสั่งผลิตจากจีน (สกรีนโลโก้ได้) ราคาบนเว็บเป็นช่วงโดยประมาณ — รายได้จริงเริ่มเมื่อมี RFQ และมัดจำ</p>
+      <div class="flow">
+        <span class="step">ลูกค้าเลือกสินค้า</span><span class="arrow">→</span>
+        <span class="step">ขอใบเสนอราคา</span><span class="arrow">→</span>
+        <span class="step">เซลล์เปิดออเดอร์</span><span class="arrow">→</span>
+        <span class="step">มัดจำ / อนุมัติสลิป</span><span class="arrow">→</span>
+        <span class="step">สั่งโรงงานจีน</span><span class="arrow">→</span>
+        <span class="step">รับของ · ส่งมอบไทย</span>
+      </div>
+      <div class="grid-2" style="margin-top:1.5rem">
+        <div class="card">
+          <h3>ความเสี่ยงเดิม</h3>
+          <ul>
+            <li>ความรู้ขั้นตอนอยู่ในหัวเซลล์/บัญชี</li>
+            <li>ไฟล์คู่มือกระจัดกระจาย — อัปเดตไม่ทันหน้าจอจริง</li>
+            <li>เอกสารเทคนิค/deploy อาจหลุดถึงคนที่ไม่ควรเห็น</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>ทิศทางที่เลือก</h3>
+          <ul>
+            <li>คู่มืออยู่ในเว็บ Ops ที่ล็อกอินแล้ว</li>
+            <li>ต้นฉบับเป็น Markdown ใน `docs/` ที่ทีมพัฒนาดูแลคู่โค้ด</li>
+            <li>กรองตามสิทธิ์เดียวกับเมนูปฏิบัติการ</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide" data-title="ภาพแพลตฟอร์ม">
+      <p class="eyebrow">04 · ภาพรวมแพลตฟอร์ม</p>
+      <h2>สามชั้นที่ผู้บริหารควรจำ</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>1) เว็บสาธารณะ</h3>
+          <p>แคตตาล็อก · RFQ · ตะกร้าขอราคา · ติดตามออเดอร์ด้วยลิงก์ · ชำระ PromptPay/สลิป · แจ้งปัญหา</p>
+          <p class="tiny">ลูกค้าจัดซื้อ — ไม่ต้องมี username Ops</p>
+        </div>
+        <div class="card">
+          <h3>2) Ops Console</h3>
+          <p>CRM · ใบเสนอราคา · ออเดอร์ · บอร์ดงาน · อนุมัติยอด · โรงงาน · รับเข้า · บัญชี · รายงาน</p>
+          <p class="tiny">พนักงานล็อกอินด้วยอีเมล/รหัสผ่าน หรือ Google</p>
+        </div>
+        <div class="card">
+          <h3>3) คู่มือ / ความรู้</h3>
+          <p>SPA คู่มือการทำงาน `/ops/manual` + ชุด `docs/manual` + SOP วงจร + Function matrix</p>
+          <p class="tiny">เชื่อมกับสิทธิ์บทบาทใน Ops</p>
+        </div>
+      </div>
+      <div class="callout">ชั้นที่ 3 คือผลงานรอบนี้ — ทำให้ความรู้ปฏิบัติการกลายเป็นสินทรัพย์องค์กร ไม่ใช่ไฟล์ส่วนตัว</div>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide" data-title="ผลงานรอบนี้">
+      <p class="eyebrow">05 · สิ่งที่ส่งมอบรอบนี้</p>
+      <h2>Work Manual SPA — สิ่งที่สร้างเสร็จ</h2>
+      <table>
+        <thead>
+          <tr><th>รายการ</th><th>รายละเอียด</th><th>ผลต่อองค์กร</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>หน้า `/ops/manual`</strong></td>
+            <td>SPA อ่านสารบัญ + เนื้อหา Markdown · ค้นหา · กระโดดหัวข้อ</td>
+            <td>พนักงานเปิดคู่มือในที่ทำงานจริง ไม่สลับไปหาไฟล์นอกระบบ</td>
+          </tr>
+          <tr>
+            <td><strong>API `/api/ops/manual`</strong></td>
+            <td>โหลด TOC/เอกสารหลังตรวจ session + สิทธิ์</td>
+            <td>ควบคุมการเข้าถึงฝั่งเซิร์ฟเวอร์ ไม่พึ่งซ่อนเมนูอย่างเดียว</td>
+          </tr>
+          <tr>
+            <td><strong>Catalog สิทธิ์</strong></td>
+            <td>จัดกลุ่มเอกสาร: เริ่มต้น / คู่มือหลัก / วงจร / ขาย / เทคนิค / ผู้ดูแล</td>
+            <td>เซลล์ไม่เห็นเอกสาร deploy / NAS / Git ของผู้ดูแล</td>
+          </tr>
+          <tr>
+            <td><strong>เมนูซ้ายหดได้</strong></td>
+            <td>ปุ่มหด/ขยายแถบ Ops · จำสถานะในเบราว์เซอร์</td>
+            <td>หน้าจอคู่มือมีพื้นที่อ่านมากขึ้นบนโน้ตบุ๊ก</td>
+          </tr>
+          <tr>
+            <td><strong>อัปเดตเอกสารกำกับ</strong></td>
+            <td>INDEX · Function matrix · ลิงก์ในเมนูระบบ</td>
+            <td>มีร่องรอย audit ว่าคู่มือครอบคลุม route ใดบ้าง</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide" data-title="ชุดเอกสาร">
+      <p class="eyebrow">06 · ชุดเอกสารต้นฉบับ</p>
+      <h2>เอกสารที่ SPA ดึงมาแสดง</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>คู่มือหลัก (`docs/manual/`)</h3>
+          <ul>
+            <li>00 INDEX — สารบัญชุดเอกสาร</li>
+            <li>01 PROJECT RECORD — บันทึกโครงการ</li>
+            <li>02 USER MANUAL — คู่มือใช้งานบท 1–8</li>
+            <li>03 WORKFLOWS — Sequence / State</li>
+            <li>04 ER DIAGRAMS — โครงข้อมูล</li>
+            <li>05 FUNCTION MATRIX — ทุก route ↔ role</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>เอกสารปฏิบัติการ / กำกับ</h3>
+          <ul>
+            <li>SOP-CYCLE — วงจรสั่งผลิต–ส่งมอบ</li>
+            <li>SOP-CHECKLIST — เช็กลิสต์ลงมือทำ</li>
+            <li>OPS-CONSOLE — คู่มือคอนโซล</li>
+            <li>BOARD-STATUS-RULES — กติกาบอร์ด</li>
+            <li>เอกสารผู้ดูแล: Staging / NAS / Git (เฉพาะ admin)</li>
+          </ul>
+        </div>
+      </div>
+      <p class="tiny" style="margin-top:1rem">หลักการ: แก้ Markdown ใน repo → พนักงานเห็นเนื้อหาใหม่ทันทีหลัง deploy/รีสตาร์ท — ไม่ต้องทำสไลด์ซ้ำทุกครั้งที่เปลี่ยนขั้นตอน</p>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide" data-title="สิทธิ์">
+      <p class="eyebrow">07 · การกำกับสิทธิ์</p>
+      <h2>ใครเห็นอะไร — สรุปผู้บริหาร</h2>
+      <table>
+        <thead>
+          <tr><th>บทบาท</th><th>ตัวอย่างที่เปิดได้</th><th>ที่ถูกปิดโดยค่าเริ่มต้น</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tag">Sales</span></td>
+            <td>คู่มือผู้ใช้ · Workflow · SOP · Ops Console · กติกาบอร์ด</td>
+            <td>Staging deploy · NAS Portainer · Git remotes</td>
+          </tr>
+          <tr>
+            <td><span class="tag">Accountant</span></td>
+            <td>SOP / วงจร · บทการเงินในคู่มือ (ถ้ามีสิทธิ์รายงาน/บัญชี)</td>
+            <td>เอกสารโครงสร้าง infra ผู้ดูแล (ถ้าไม่ใช่ admin)</td>
+          </tr>
+          <tr>
+            <td><span class="tag">Viewer</span></td>
+            <td>เอกสารภาพรวม / อ่านอย่างเดียวตาม permission อ่าน</td>
+            <td>เอกสารเขียนราคา / ผู้ดูแลระบบ</td>
+          </tr>
+          <tr>
+            <td><span class="tag">Admin / Superadmin</span></td>
+            <td>ครบทุกกลุ่ม รวมเทคนิคและเอกสาร deploy</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">สิทธิ์ใช้ชุดเดียวกับเมนู Ops (`quotes.read`, `finance.read`, `factory.read`, `users.read`, …) — ไม่สร้างระบบสิทธิ์ขนาน</div>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide" data-title="ธรรมาภิบาล">
+      <p class="eyebrow">08 · ธรรมาภิบาลข้อมูล</p>
+      <h2>ทำไมเรื่องนี้ถึงเป็นวาระผู้บริหาร</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>ความลับปฏิบัติการ</h3>
+          <p>ขั้นตอนโรงงาน ต้นทุน และวิธี deploy ไม่ควรกระจายเท่าไฟล์แชร์ทั้งบริษัท</p>
+        </div>
+        <div class="card">
+          <h3>ความต่อเนื่องธุรกิจ</h3>
+          <p>เมื่อมีพนักงานใหม่หรือสลับกะ — คู่มือมาตรฐานลด downtime ของเซลล์/บัญชี</p>
+        </div>
+        <div class="card">
+          <h3>ตรวจสอบได้</h3>
+          <p>Function matrix ผูก route กับบทคู่มือ — ใช้ตรวจว่ามีหน้าที่ยังไร้คำอธิบาย</p>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:1rem">
+        <div class="card">
+          <h3>สิ่งที่ระบบบังคับ</h3>
+          <ul>
+            <li>ต้องล็อกอิน Ops ก่อนอ่าน</li>
+            <li>API ปฏิเสธ 401/403 เมื่อไม่มีสิทธิ์</li>
+            <li>เอกสารถูกคัดออกจากสารบัญตามบทบาท</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>สิ่งที่ยังต้องมีวินัยคน</h3>
+          <ul>
+            <li>เจ้าของเอกสารอัปเดตเมื่อเปลี่ยนขั้นตอน</li>
+            <li>ไม่แปะรหัสผ่าน/ข้อมูลลูกค้าใน Markdown</li>
+            <li>หัวหน้าฝ่ายรีวิว SOP รายไตรมาส</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="slide" data-title="ความสามารถ Ops">
+      <p class="eyebrow">09 · ความสามารถคอนโซล</p>
+      <h2>Ops Console ที่คู่มืออธิบายครอบคลุม</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>ขายและลูกค้า</h3>
+          <ul>
+            <li>ใบเสนอราคา / ข้อความติดต่อ</li>
+            <li>CRM ลูกค้า · นัดหมาย</li>
+            <li>ผู้ช่วยเซลล์ · LINE lab</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>ราคาและสินค้า</h3>
+          <ul>
+            <li>คิดราคาทีละชุด · ชีตราคา</li>
+            <li>นำเข้า Excel · SKU A/B/C/D</li>
+            <li>สมุดแคตตาล็อก · รูปโรงงาน</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>ปฏิบัติการ</h3>
+          <ul>
+            <li>อนุมัติยอด · ใบรับเงิน</li>
+            <li>ใบสั่งโรงงาน · รับเข้า</li>
+            <li>จ่ายโรงงาน · เคลม · hold</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>บัญชีและรายงาน</h3>
+          <ul>
+            <li>งบผู้บริหาร / สมุดบัญชี</li>
+            <li>รายงานวงจรรายได้</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>เนื้อหาเว็บ</h3>
+          <ul>
+            <li>SEO override</li>
+            <li>บทความ editorial</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>ระบบ</h3>
+          <ul>
+            <li>ผู้ใช้ / สิทธิ์</li>
+            <li>Audit log</li>
+            <li><strong>คู่มือการทำงาน</strong> (ใหม่)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section class="slide" data-title="มูลค่า">
+      <p class="eyebrow">10 · มูลค่าทางธุรกิจ</p>
+      <h2>ผลที่คาดหวัง (วัดได้)</h2>
+      <table>
+        <thead>
+          <tr><th>ตัวชี้วัด</th><th>ก่อน</th><th>เป้าหมายหลังใช้คู่มือในระบบ</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>เวลาอบรมพนักงานใหม่ถึงทำงาน RFQ ได้</td>
+            <td>พึ่งพี่เลี้ยง / ถามซ้ำ</td>
+            <td>ลดรอบถามซ้ำ — มีเส้นทางอ่านตามบทบาท</td>
+          </tr>
+          <tr>
+            <td>ความผิดพลาดขั้นตอน (สั่งโรงงานก่อนมัดจำ ฯลฯ)</td>
+            <td>พึ่งความจำ + แชท</td>
+            <td>SOP + กติกาบอร์ดอยู่ในมือขณะทำงาน</td>
+          </tr>
+          <tr>
+            <td>การเปิดเผยเอกสาร infra</td>
+            <td>แชร์โฟลเดอร์กว้าง</td>
+            <td>เฉพาะ platform admin ใน SPA</td>
+          </tr>
+          <tr>
+            <td>เอกสารคลาดเคลื่อนจากหน้าจอจริง</td>
+            <td>อัปเดตช้า / คนละเวอร์ชัน</td>
+            <td>ต้นฉบับคู่โค้ด + matrix ตรวจ route</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 12 -->
+    <section class="slide" data-title="สาธิต">
+      <p class="eyebrow">11 · เส้นทางสาธิต 5 นาที</p>
+      <h2>Demo ที่แนะนำให้ผู้บริหารดูสด</h2>
+      <ol>
+        <li><strong>ล็อกอิน</strong> `/ops/login` ด้วยบัญชีผู้ดูแล</li>
+        <li>เปิดเมนู <strong>ระบบ → คู่มือการทำงาน</strong> หรือ `/ops/manual`</li>
+        <li>เลือก <strong>Workflow diagrams</strong> / <strong>SOP ทั้งวงจร</strong> — แสดงว่าเนื้อมาจากไฟล์ MD</li>
+        <li>กด <strong>หดเมนูซ้าย</strong> เพื่อให้พื้นที่อ่านคู่มือ</li>
+        <li>(ถ้ามี) สลับบัญชีเซลล์ — สารบัญจะไม่มีเอกสาร Staging / NAS / Git</li>
+      </ol>
+      <div class="callout">
+        URL ท้องถิ่นปัจจุบัน: <code>http://localhost:3001/ops/manual</code>
+        · โปรดักชันจะอยู่ภายใต้โดเมน Ops ขององค์กรหลัง deploy
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section class="slide" data-title="สถาปัตยกรรม">
+      <p class="eyebrow">12 · สถาปัตยกรรมแบบผู้บริหาร</p>
+      <h2>ไหลของข้อมูลคู่มือ (ไม่ลึกโค้ด)</h2>
+      <div class="flow">
+        <span class="step">พนักงานล็อกอิน Ops</span><span class="arrow">→</span>
+        <span class="step">ตรวจ role / permission</span><span class="arrow">→</span>
+        <span class="step">สร้างสารบัญที่อนุญาต</span><span class="arrow">→</span>
+        <span class="step">อ่านไฟล์ docs/*.md</span><span class="arrow">→</span>
+        <span class="step">แปลงเป็น HTML ปลอดภัย</span><span class="arrow">→</span>
+        <span class="step">แสดงใน SPA</span>
+      </div>
+      <div class="grid-2" style="margin-top:1.5rem">
+        <div class="card">
+          <h3>เทคโนโลยีหลักของแพลตฟอร์ม</h3>
+          <ul>
+            <li>Next.js 15 + React 19 (เว็บและ Ops)</li>
+            <li>SQLite Ops · MySQL catalog · Strapi CMS</li>
+            <li>MinIO เก็บไฟล์ · Docker / Portainer deploy</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>จุดที่ผู้บริหารควรสนใจ</h3>
+          <ul>
+            <li>ความรู้ถูกเวอร์ชันใน Git เหมือนซอฟต์แวร์</li>
+            <li>Standalone deploy คัดลอกโฟลเดอร์ `docs/` ไปด้วย</li>
+            <li>ไม่มีฐานข้อมูลคู่มือแยก — ลดภาระดูแล</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section class="slide" data-title="ความปลอดภัย">
+      <p class="eyebrow">13 · ความปลอดภัยและการเข้าถึง</p>
+      <h2>ขอบเขตการป้องกัน</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>ที่ครอบคลุมแล้ว</h3>
+          <ul>
+            <li>บังคับ session Ops ก่อนเข้าหน้าคู่มือ</li>
+            <li>กรองเอกสารระดับรายไฟล์ตาม audience</li>
+            <li>กัน path traversal ตอนอ่านไฟล์</li>
+            <li>แปลง Markdown เป็น HTML แบบ escape</li>
+            <li>หน้าคู่มือตั้ง robots noindex</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>ข้อจำกัดที่ควรรับทราบ</h3>
+          <ul>
+            <li>ผู้มีสิทธิ์ยังคัดลอกข้อความออกนอกระบบได้</li>
+            <li>SOP แบบโทเค็น `/sop` ยังมีแยก (สำหรับเคสแชร์ลิงก์)</li>
+            <li>คุณภาพเอกสารขึ้นกับวินัยอัปเดตของเจ้าของเรื่อง</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15 -->
+    <section class="slide" data-title="เปรียบเทียบ">
+      <p class="eyebrow">14 · เปรียบเทียบทางเลือก</p>
+      <h2>ทำไมไม่ใช้แค่ Google Drive / Notion</h2>
+      <table>
+        <thead>
+          <tr><th>ทางเลือก</th><th>ข้อดี</th><th>ข้อจำกัดในบริบท Terabis</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>แชร์โฟลเดอร์</td>
+            <td>คุ้นเคย แก้เร็ว</td>
+            <td>สิทธิ์หยาบ · หลุดเวอร์ชัน · ไม่ผูกหน้าจอจริง</td>
+          </tr>
+          <tr>
+            <td>Wiki ภายนอก</td>
+            <td>ค้นหาง่าย</td>
+            <td>อีกบัญชี / อีกที่ — ไม่ใช้ RBAC เดียวกับ Ops</td>
+          </tr>
+          <tr>
+            <td><strong>SPA ใน Ops (ที่เลือก)</strong></td>
+            <td>สิทธิ์เดียว · คู่โค้ด · ใกล้เมนูงาน</td>
+            <td>ต้องมีวินัย commit เอกสารใน repo</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 16 -->
+    <section class="slide" data-title="แผนถัดไป">
+      <p class="eyebrow">15 · แผนถัดไป (เสนอ)</p>
+      <h2>Roadmap หลังรับรองจากผู้บริหาร</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>30 วัน</h3>
+          <ul>
+            <li>แต่งตั้งเจ้าของเอกสารรายกลุ่ม</li>
+            <li>อบรมสั้น เซลล์/บัญชี ใช้ `/ops/manual`</li>
+            <li>เก็บ feedback หัวข้อที่ขาด</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>60 วัน</h3>
+          <ul>
+            <li>ผูกภาพหน้าจอจริงในบทคู่มือสำคัญ</li>
+            <li>เช็ค matrix ครบทุก route ใหม่</li>
+            <li>ทบทวน gate สิทธิ์รายเอกสาร</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>90 วัน</h3>
+          <ul>
+            <li>วัดเวลาอบรมพนักงานใหม่</li>
+            <li>รีวิว SOP รายไตรมาสโดยหัวหน้าฝ่าย</li>
+            <li>พิจารณาค้นหาเต็มข้อความข้ามเอกสาร</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17 -->
+    <section class="slide" data-title="คำขอตัดสินใจ">
+      <p class="eyebrow">16 · คำขอตัดสินใจ</p>
+      <h2>สิ่งที่ขอจากผู้บริหารวันนี้</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>ขออนุมัติ</h3>
+          <ul>
+            <li>ใช้ `/ops/manual` เป็นช่องทางคู่มือปฏิบัติการหลัก</li>
+            <li>ให้หัวหน้าฝ่ายเป็นเจ้าของเนื้อหาในกลุ่มของตน</li>
+            <li>กำหนดว่าเอกสาร deploy/infra อยู่เฉพาะ admin</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>ขอทรัพยากร</h3>
+          <ul>
+            <li>เวลา 1–2 ชม./ฝ่าย สำหรับรีวิวเอกสารรอบแรก</li>
+            <li>ยืนยันรายชื่อบทบาทพนักงานใน `/ops/users` ให้ตรงงานจริง</li>
+            <li>นัดสาธิตกับทีมขาย/บัญชีภายใน 2 สัปดาห์</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">เมื่ออนุมัติแล้ว ทีมจะล็อกกระบวนการ: เพิ่มหน้า Ops ใหม่ → อัปเดต Function matrix → อัปเดตคู่มือ → ตรวจสิทธิ์ใน catalog</div>
+    </section>
+
+    <!-- 18 -->
+    <section class="slide dark" data-title="ปิด">
+      <p class="eyebrow">สรุปปิด</p>
+      <h1>ความรู้ปฏิบัติการต้องอยู่ในระบบเดียวกับงาน</h1>
+      <p class="lede">
+        คู่มือการทำงานที่สร้างในรอบนี้ทำให้เอกสาร Markdown ขององค์กรกลายเป็นประสบการณ์ใช้งานจริง
+        ภายใต้สิทธิ์พนักงาน — พร้อมขยายต่อเมื่อธุรกิจเพิ่มเมนูหรือขั้นตอนใหม่
+      </p>
+      <div class="grid-3" style="margin-top:1.5rem">
+        <div class="card"><h3>เปิดใช้</h3><p>`/ops/manual`</p></div>
+        <div class="card"><h3>ต้นฉบับ</h3><p>`docs/manual/` + SOP</p></div>
+        <div class="card"><h3>หลักการ</h3><p>สิทธิ์เดียวกับ Ops</p></div>
+      </div>
+      <div class="meta-line">คำถามเพิ่มเติม · ภาคผนวก: ไฟล์นี้ + `docs/manual/00-INDEX.md` · Terabis / SmartGift</div>
+    </section>
+
+    <!-- 19 appendix -->
+    <section class="slide" data-title="ภาคผนวก A">
+      <p class="eyebrow">ภาคผนวก A</p>
+      <h2>ไฟล์สำคัญที่เกี่ยวข้อง</h2>
+      <table>
+        <thead>
+          <tr><th>พาธ</th><th>บทบาท</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>app/ops/manual/page.tsx</code></td><td>หน้า SPA คู่มือ</td></tr>
+          <tr><td><code>components/ops/OpsManualApp.tsx</code></td><td>UI สารบัญ + เนื้อหา</td></tr>
+          <tr><td><code>lib/ops-manual-catalog.ts</code></td><td>รายการเอกสารและสิทธิ์</td></tr>
+          <tr><td><code>lib/ops-manual-loader.ts</code></td><td>อ่านไฟล์ MD จากดิสก์</td></tr>
+          <tr><td><code>app/api/ops/manual/route.ts</code></td><td>API โหลดเนื้อหา</td></tr>
+          <tr><td><code>components/OpsNav.tsx</code></td><td>เมนูซ้ายหดได้</td></tr>
+          <tr><td><code>docs/presentations/EXEC-WORK-MANUAL-BRIEFING.html</code></td><td>ไฟล์พรีเซ็นต์นี้</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 20 appendix -->
+    <section class="slide" data-title="ภาคผนวก B">
+      <p class="eyebrow">ภาคผนวก B</p>
+      <h2>คำศัพท์สำหรับผู้บริหาร</h2>
+      <div class="grid-2">
+        <div class="card">
+          <ul>
+            <li><strong>RFQ</strong> — คำขอใบเสนอราคาจากลูกค้า</li>
+            <li><strong>Ops</strong> — คอนโซลพนักงาน `/ops`</li>
+            <li><strong>RBAC</strong> — ควบคุมสิทธิ์ตามบทบาท</li>
+            <li><strong>SPA</strong> — หน้าเว็บแบบแอป เปลี่ยนเนื้อหาไม่รีโหลดทั้งไซต์</li>
+          </ul>
+        </div>
+        <div class="card">
+          <ul>
+            <li><strong>SOP</strong> — ขั้นตอนปฏิบัติงานมาตรฐาน</li>
+            <li><strong>Factory PO</strong> — ใบสั่งโรงงานจีน</li>
+            <li><strong>Function matrix</strong> — ตาราง route ↔ สิทธิ์ ↔ บทคู่มือ</li>
+            <li><strong>Landed cost</strong> — ต้นทุนถึงคลัง/ขายหลังภาษีค่าขนส่ง</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="footer-bar">
+    <div>
+      <button type="button" id="prevBtn" aria-label="สไลด์ก่อนหน้า">← ก่อนหน้า</button>
+      <button type="button" id="nextBtn" aria-label="สไลด์ถัดไป">ถัดไป →</button>
+      <button type="button" id="printBtn">พิมพ์ / PDF</button>
+    </div>
+    <div id="status">1 / 1</div>
+  </div>
+
+  <script>
+    (function () {
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      let i = 0;
+      const status = document.getElementById("status");
+      function show(n) {
+        i = Math.max(0, Math.min(slides.length - 1, n));
+        slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+        const title = slides[i].getAttribute("data-title") || "";
+        status.textContent = (i + 1) + " / " + slides.length + (title ? " · " + title : "");
+        history.replaceState(null, "", "#s" + (i + 1));
+      }
+      function next() { show(i + 1); }
+      function prev() { show(i - 1); }
+      document.getElementById("nextBtn").addEventListener("click", next);
+      document.getElementById("prevBtn").addEventListener("click", prev);
+      document.getElementById("printBtn").addEventListener("click", () => window.print());
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
+          e.preventDefault();
+          next();
+        } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+          e.preventDefault();
+          prev();
+        } else if (e.key === "Home") {
+          show(0);
+        } else if (e.key === "End") {
+          show(slides.length - 1);
+        }
+      });
+      const hash = location.hash.match(/^#s(\d+)$/);
+      show(hash ? Number(hash[1]) - 1 : 0);
+    })();
+  </script>
+</body>
+</html>

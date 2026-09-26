@@ -1,0 +1,21 @@
+node_modules
+npm-debug.log*
+.git
+.gitlab
+.gitignore
+.next
+.data
+.tmp-tests
+.env
+.env.*
+!.env.example
+coverage
+# Do not exclude docs/ or *.md — /ops/manual reads docs/**/*.md from disk at runtime.
+agent-transcripts
+attachments
+workspace.code-workspace
+Dockerfile*
+docker-compose*
+.DS_Store
+*.sqlite
+*.sqlite-*

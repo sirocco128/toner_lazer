@@ -1,0 +1,882 @@
+openapi: 3.0.3
+info:
+  title: SmartGift Partner REST API
+  version: v1
+  description: |
+    Read-only machine API for CRM / n8n / ERP / external storefront BFF.
+
+    - Auth: `Authorization: Bearer <token>` (API key — not `/ops` session cookies)
+    - No CORS — server-to-server / BFF only
+    - Webhook `quote.requested` still **pushes** new RFQs; this API does not replace it
+
+    ### Scopes
+
+    | Scope | Access |
+    |-------|--------|
+    | `quotes:read` | Quotes list + detail |
+    | `orders:read` | Orders list + detail |
+    | `catalog:read` | Products / promotions / retail |
+
+    ### Never returned
+
+    `accessToken`, `ipHash`, `userAgent`, `rawPayload`, `salesNotes`, `qrPayload`,
+    factory CNY / 1688 cost, ORI factory product codes, MOQ / `forced_min_qty`,
+    and (on `/products`) any sell ladder / price fields.
+  contact:
+    name: Therabis / SmartGift
+servers:
+  - url: https://{host}
+    description: Production / staging host
+    variables:
+      host:
+        default: localhost:3000
+        description: Deployed site host (no scheme)
+  - url: http://localhost:3000
+    description: Local Next.js
+
+tags:
+  - name: Discovery
+    description: API version and resource catalog
+  - name: Quotes
+    description: RFQ / lead pull (`quotes:read`)
+  - name: Orders
+    description: Order pull (`orders:read`)
+  - name: Catalog
+    description: Public-safe catalog for another frontend BFF (`catalog:read`)
+
+paths:
+  /api/partner/v1:
+    get:
+      tags: [Discovery]
+      summary: Discovery
+      description: Requires any of `quotes:read`, `orders:read`, or `catalog:read`.
+      operationId: getPartnerDiscovery
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Discovery payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/NotConfigured"
+
+  /api/partner/v1/quotes:
+    get:
+      tags: [Quotes]
+      summary: List quotes
+      description: |
+        Oldest-first (`updated_at ASC`). Follow `nextCursor` until it is `null`.
+        `limit` default 50, max 100.
+      operationId: listPartnerQuotes
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UpdatedSince"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/ListLimit"
+      responses:
+        "200":
+          description: Quote page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/NotConfigured"
+
+  /api/partner/v1/quotes/{requestId}:
+    get:
+      tags: [Quotes]
+      summary: Get quote by requestId
+      operationId: getPartnerQuote
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: RFQ-20260907-AABBCCDDEEFF
+      responses:
+        "200":
+          description: Quote + sales timeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetailResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/NotConfigured"
+
+  /api/partner/v1/orders:
+    get:
+      tags: [Orders]
+      summary: List orders
+      description: |
+        Oldest-first (`updated_at ASC`). Follow `nextCursor` until it is `null`.
+        `limit` default 50, max 100.
+      operationId: listPartnerOrders
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UpdatedSince"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/ListLimit"
+      responses:
+        "200":
+          description: Order page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/NotConfigured"
+
+  /api/partner/v1/orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Get order by orderId
+      operationId: getPartnerOrder
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ORD-1
+      responses:
+        "200":
+          description: Order + payments + documents + recent events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderDetailResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/NotConfigured"
+
+  /api/partner/v1/products:
+    get:
+      tags: [Catalog]
+      summary: List catalog products (no factory / MOQ / price)
+      description: |
+        All gift-set offers for another frontend.
+
+        **Omitted on purpose:** factory/ORI codes, MOQ, sell ladder / any price fields.
+        Image URLs are absolute (`NEXT_PUBLIC_SITE_URL`).
+        `limit` default 100, max 500.
+      operationId: listPartnerCatalogProducts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search name / offer code / slug
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Category slug (e.g. `drinkware`, `eco`)
+          example: novelty-self-care
+        - $ref: "#/components/parameters/CatalogLimit"
+      responses:
+        "200":
+          description: Product list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogProductListResponse"
+              example:
+                ok: true
+                data:
+                  - offerCode: TSQ01-2
+                    slug: tsq01-2
+                    name: Light humidifier gift set
+                    description: Premium unboxing set — includes neck massager
+                    material: ชุดของขวัญ · PF-NOVELTY-WELLNESS
+                    categorySlug: novelty-self-care
+                    categoryName: Novelty & Self-Care
+                    images:
+                      - https://example.com/images/product-tumbler.jpg
+                    leadDays: 21
+                    components:
+                      - name: เครื่องนวดคอพกพา
+                        qty: 1
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+
+  /api/partner/v1/promotions:
+    get:
+      tags: [Catalog]
+      summary: List promotion / clearance items with image carousel
+      description: |
+        Union of stock class `C` (clearance) and SKUs tagged `promo`.
+        Each item includes `images[]` for frontend carousel loop.
+        `limit` default 100, max 500.
+      operationId: listPartnerCatalogPromotions
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CatalogLimit"
+      responses:
+        "200":
+          description: Promotion list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogPromotionListResponse"
+              example:
+                ok: true
+                data:
+                  - productId: C00001
+                    slug: clearance-tumbler
+                    nameTh: เคลียร์แก้ว
+                    nameEn: null
+                    stockClass: C
+                    isBundle: false
+                    colorNameTh: ดำ
+                    clearanceReason: กล่องบุบ
+                    tags: [promo]
+                    images:
+                      - https://example.com/api/sku-files/1
+                      - https://example.com/api/sku-files/2
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+
+  /api/partner/v1/retail:
+    get:
+      tags: [Catalog]
+      summary: List retail SKUs with sell price and images
+      description: |
+        SKUs with `sell_price_thb > 0`, plus product photos.
+        Does **not** return factory CNY / landed cost / MOQ / ORI codes.
+        `limit` default 100, max 500.
+      operationId: listPartnerCatalogRetail
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search SKU name / id
+        - $ref: "#/components/parameters/CatalogLimit"
+      responses:
+        "200":
+          description: Retail list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogRetailListResponse"
+              example:
+                ok: true
+                data:
+                  - productId: A00012
+                    slug: a00012
+                    nameTh: แก้วพร้อมส่ง
+                    nameEn: Ready tumbler
+                    stockClass: A
+                    isBundle: false
+                    colorNameTh: ขาว
+                    sellPriceThb: 299
+                    currency: THB
+                    images:
+                      - https://example.com/api/sku-files/9
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Partner API key
+      description: |
+        Env bootstrap: `PARTNER_API_KEY`  
+        Or minted token: `sgp_<keyId>.<secret>` from `npm run partner:key`
+
+  parameters:
+    UpdatedSince:
+      name: updated_since
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+      description: Inclusive lower bound on `updated_at`
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque page cursor from previous `nextCursor`
+    ListLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    CatalogLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 100
+
+  responses:
+    BadRequest:
+      description: Invalid cursor or path id
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            error: invalid cursor
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            error: unauthorized
+    Forbidden:
+      description: Token valid but required scope missing
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            error: forbidden
+    NotFound:
+      description: Unknown id
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            error: not found
+    RateLimited:
+      description: Rate limited
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            error: rate limited
+    NotConfigured:
+      description: No `PARTNER_API_KEY` and no enabled DB keys
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            error: not configured
+    CatalogUnavailable:
+      description: Partner auth OK but catalog MySQL / SKU tables unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            error: catalog unavailable
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [ok, error]
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+
+    DiscoveryResponse:
+      type: object
+      required: [ok, version, scopes, resources]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        version:
+          type: string
+          example: v1
+        scopes:
+          type: array
+          items:
+            type: string
+            enum: [quotes:read, orders:read, catalog:read]
+        resources:
+          type: array
+          items:
+            type: object
+            required: [method, path, scope]
+            properties:
+              method:
+                type: string
+                example: GET
+              path:
+                type: string
+              scope:
+                type: string
+              query:
+                type: array
+                items:
+                  type: string
+
+    PartnerQuote:
+      type: object
+      required:
+        - requestId
+        - submittedAt
+        - leadStatus
+        - webhookStatus
+        - name
+        - company
+        - email
+        - phone
+        - quantity
+        - decorationMethod
+        - consentAt
+        - createdAt
+        - updatedAt
+      properties:
+        requestId: { type: string }
+        submittedAt: { type: string, format: date-time }
+        leadStatus: { type: string }
+        webhookStatus: { type: string }
+        webhookDeliveredAt: { type: string, format: date-time, nullable: true }
+        customerId: { type: integer, nullable: true }
+        name: { type: string }
+        company: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        quantity: { type: integer }
+        budgetPerSet: { type: number, nullable: true }
+        neededDate: { type: string, nullable: true }
+        streetAddress: { type: string, nullable: true }
+        province: { type: string, nullable: true }
+        district: { type: string, nullable: true }
+        subdistrict: { type: string, nullable: true }
+        zip: { type: string, nullable: true }
+        taxId: { type: string, nullable: true }
+        billingBranch: { type: string, nullable: true }
+        productInterest: { type: string, nullable: true }
+        productSlug: { type: string, nullable: true }
+        decorationMethod: { type: string }
+        detail: { type: string, nullable: true }
+        consentAt: { type: string, format: date-time }
+        landingPath: { type: string, nullable: true }
+        referrer: { type: string, nullable: true }
+        utmSource: { type: string, nullable: true }
+        utmMedium: { type: string, nullable: true }
+        utmCampaign: { type: string, nullable: true }
+        utmTerm: { type: string, nullable: true }
+        utmContent: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    PartnerQuoteTimelineEntry:
+      type: object
+      required: [createdAt, toStatus]
+      properties:
+        createdAt: { type: string, format: date-time }
+        fromStatus: { type: string, nullable: true }
+        toStatus: { type: string }
+        note: { type: string, nullable: true }
+
+    QuoteListResponse:
+      type: object
+      required: [ok, data, nextCursor]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerQuote"
+        nextCursor:
+          type: string
+          nullable: true
+
+    QuoteDetailResponse:
+      type: object
+      required: [ok, data, timeline]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: "#/components/schemas/PartnerQuote"
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerQuoteTimelineEntry"
+
+    PartnerOrder:
+      type: object
+      required:
+        - orderId
+        - company
+        - contactName
+        - email
+        - phone
+        - billingName
+        - billingBranch
+        - productSummary
+        - quantity
+        - currency
+        - vatRate
+        - vatMode
+        - subtotalExVat
+        - vatAmount
+        - totalAmount
+        - depositMode
+        - depositPercent
+        - depositAmount
+        - remainingAmount
+        - paidAmount
+        - paymentStatus
+        - fulfillmentStatus
+        - createdAt
+        - updatedAt
+      properties:
+        orderId: { type: string }
+        quoteRequestId: { type: string, nullable: true }
+        customerId: { type: integer, nullable: true }
+        company: { type: string }
+        contactName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        billingName: { type: string }
+        billingTaxId: { type: string, nullable: true }
+        billingAddress: { type: string, nullable: true }
+        billingBranch: { type: string }
+        shipToName: { type: string, nullable: true }
+        shipToPhone: { type: string, nullable: true }
+        shipToAddress: { type: string, nullable: true }
+        shipToProvince: { type: string, nullable: true }
+        productSummary: { type: string }
+        quantity: { type: integer }
+        currency: { type: string, example: THB }
+        vatRate: { type: number }
+        vatMode: { type: string }
+        subtotalExVat: { type: number }
+        vatAmount: { type: number }
+        totalAmount: { type: number }
+        depositMode: { type: string }
+        depositPercent: { type: number }
+        depositAmount: { type: number }
+        remainingAmount: { type: number }
+        paidAmount: { type: number }
+        paymentStatus: { type: string }
+        fulfillmentStatus: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    PartnerPayment:
+      type: object
+      required: [paymentId, kind, amount, method, status, createdAt, updatedAt]
+      properties:
+        paymentId: { type: string }
+        kind: { type: string }
+        amount: { type: number }
+        method: { type: string }
+        status: { type: string }
+        customerReference: { type: string, nullable: true }
+        confirmedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    PartnerBillingDocument:
+      type: object
+      required:
+        - documentId
+        - documentType
+        - status
+        - subtotalExVat
+        - vatAmount
+        - grandTotal
+        - issuedAt
+      properties:
+        documentId: { type: string }
+        documentType: { type: string }
+        status: { type: string }
+        subtotalExVat: { type: number }
+        vatAmount: { type: number }
+        grandTotal: { type: number }
+        issuedAt: { type: string, format: date-time }
+        voidedAt: { type: string, format: date-time, nullable: true }
+
+    PartnerOrderEvent:
+      type: object
+      required: [eventType, message, createdAt]
+      properties:
+        eventType: { type: string }
+        message: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    OrderListResponse:
+      type: object
+      required: [ok, data, nextCursor]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerOrder"
+        nextCursor:
+          type: string
+          nullable: true
+
+    OrderDetailResponse:
+      type: object
+      required: [ok, data, payments, documents, events]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: "#/components/schemas/PartnerOrder"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerPayment"
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerBillingDocument"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerOrderEvent"
+
+    CatalogComponent:
+      type: object
+      required: [name, qty]
+      properties:
+        name: { type: string }
+        qty: { type: integer, minimum: 1 }
+
+    PartnerCatalogProduct:
+      type: object
+      required:
+        - offerCode
+        - slug
+        - name
+        - description
+        - material
+        - categorySlug
+        - categoryName
+        - images
+        - leadDays
+        - components
+      description: No minOrder, no price fields, no factory codes.
+      properties:
+        offerCode: { type: string, description: Business offer code (not factory ORI) }
+        slug: { type: string }
+        name: { type: string }
+        description: { type: string }
+        material: { type: string }
+        categorySlug: { type: string }
+        categoryName: { type: string, nullable: true }
+        images:
+          type: array
+          items: { type: string, format: uri }
+        leadDays: { type: number, nullable: true }
+        components:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogComponent"
+
+    PartnerCatalogPromotion:
+      type: object
+      required:
+        - productId
+        - slug
+        - nameTh
+        - nameEn
+        - stockClass
+        - isBundle
+        - colorNameTh
+        - clearanceReason
+        - tags
+        - onHandQty
+        - images
+      properties:
+        productId: { type: string, example: C00001 }
+        slug: { type: string }
+        nameTh: { type: string }
+        nameEn: { type: string, nullable: true }
+        stockClass: { type: string, example: C }
+        isBundle: { type: boolean }
+        colorNameTh: { type: string, nullable: true }
+        clearanceReason: { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        onHandQty:
+          type: integer
+          minimum: 0
+          description: Physical stock mirrored from WMS into sg_sku.on_hand_qty
+        images:
+          type: array
+          items: { type: string, format: uri }
+          description: Ordered for carousel loop (cover first)
+
+    PartnerCatalogRetail:
+      type: object
+      required:
+        - productId
+        - slug
+        - nameTh
+        - nameEn
+        - stockClass
+        - isBundle
+        - colorNameTh
+        - sellPriceThb
+        - currency
+        - onHandQty
+        - images
+      properties:
+        productId: { type: string }
+        slug: { type: string }
+        nameTh: { type: string }
+        nameEn: { type: string, nullable: true }
+        stockClass: { type: string }
+        isBundle: { type: boolean }
+        colorNameTh: { type: string, nullable: true }
+        sellPriceThb: { type: number, exclusiveMinimum: 0 }
+        currency:
+          type: string
+          enum: [THB]
+        onHandQty:
+          type: integer
+          minimum: 0
+          description: Physical stock mirrored from WMS into sg_sku.on_hand_qty
+        images:
+          type: array
+          items: { type: string, format: uri }
+
+    CatalogProductListResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerCatalogProduct"
+
+    CatalogPromotionListResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerCatalogPromotion"
+
+    CatalogRetailListResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerCatalogRetail"

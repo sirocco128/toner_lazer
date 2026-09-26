@@ -1,0 +1,33 @@
+############################
+# OS / IDE
+############################
+.DS_Store
+.idea/
+.vscode/
+
+############################
+# Node
+############################
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+############################
+# Strapi
+############################
+.env
+.env.local
+.tmp/
+.cache/
+build/
+dist/
+.strapi/
+.strapi-updater.json
+exports/
+types/generated/
+public/uploads/*
+!public/uploads/.gitkeep
+*.db
+*.sqlite
+*.sqlite-*

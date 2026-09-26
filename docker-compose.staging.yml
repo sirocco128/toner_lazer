@@ -1,0 +1,197 @@
+# Staging stack — Next.js web + Postgres (Strapi runs on host from ./cms)
+#
+# Prerequisites:
+#   cp .env.staging.example .env.staging   # or: npm run sprint2:apply-intake -- --target .env.staging
+#
+#   docker compose -f docker-compose.staging.yml up -d --build
+#   npm run staging:smoke
+#
+# Schema: Compose service `migrate` applies all db/migrations/*.sql (SQLite)
+# and db/mysql/wms_core.sql when SMARTGIFT_MYSQL_ENABLED=true. Do not rely on
+# host `npm run db:migrate` for this stack.
+#
+# MinIO (images, PDFs, slips, mockups): API 9010 / console 9011 on the host.
+# Replica: API 9012 / console 9013.
+#
+# Strapi (optional, on host):
+#   docker compose up -d postgres
+#   npm run cms:bootstrap && cd cms && npm run develop
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: giftset-staging-postgres
+    restart: unless-stopped
+    ports:
+      # Avoid 5433 — often taken by other local Postgres stacks (e.g. genesis-biz).
+      - "5439:5432"
+    environment:
+      POSTGRES_DB: giftset_staging
+      POSTGRES_USER: giftset
+      POSTGRES_PASSWORD: giftset_staging
+    volumes:
+      - giftset_staging_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U giftset -d giftset_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  minio:
+    image: minio/minio:latest
+    container_name: giftset-staging-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9020:9000"
+      - "9021:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-terabis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-terabisMinioDev1}
+      MINIO_KMS_SECRET_KEY: "${MINIO_KMS_SECRET_KEY:-giftset-dev:ymytN68ifaCKY+kmOVGz98/wmv+ogeEGFz8sKs/SjoA=}"
+    volumes:
+      - giftset_staging_minio:/data
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: giftset-staging-minio-init
+    depends_on:
+      - minio
+    restart: on-failure
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-terabis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-terabisMinioDev1}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-giftset-app}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-giftsetAppDevKey1}
+      MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE:-terabis-private}
+      MINIO_BUCKET_PUBLIC: ${MINIO_BUCKET_PUBLIC:-terabis-public}
+      MINIO_BUCKET_CONFIDENTIAL: ${MINIO_BUCKET_CONFIDENTIAL:-terabis-confidential}
+      MINIO_BUCKET_RESTRICTED: ${MINIO_BUCKET_RESTRICTED:-terabis-restricted}
+      MINIO_RETENTION_DAYS: ${MINIO_RETENTION_DAYS:-1825}
+    volumes:
+      - ./scripts/minio-init.sh:/init.sh:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "tr -d '\\r' < /init.sh > /tmp/init-lf.sh && exec /bin/sh /tmp/init-lf.sh"
+
+  minio-replica:
+    image: minio/minio:latest
+    container_name: giftset-staging-minio-replica
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9022:9000"
+      - "9023:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-terabis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-terabisMinioDev1}
+      MINIO_KMS_SECRET_KEY: "${MINIO_KMS_SECRET_KEY:-giftset-dev:ymytN68ifaCKY+kmOVGz98/wmv+ogeEGFz8sKs/SjoA=}"
+    volumes:
+      - giftset_staging_minio_replica:/data
+
+  minio-mirror:
+    image: minio/mc:latest
+    container_name: giftset-staging-minio-mirror
+    depends_on:
+      - minio
+      - minio-replica
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-terabis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-terabisMinioDev1}
+      MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE:-terabis-private}
+      MINIO_BUCKET_PUBLIC: ${MINIO_BUCKET_PUBLIC:-terabis-public}
+      MINIO_BUCKET_CONFIDENTIAL: ${MINIO_BUCKET_CONFIDENTIAL:-terabis-confidential}
+      MINIO_BUCKET_RESTRICTED: ${MINIO_BUCKET_RESTRICTED:-terabis-restricted}
+    volumes:
+      - ./scripts/minio-mirror.sh:/mirror.sh:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "tr -d '\\r' < /mirror.sh > /tmp/mirror-lf.sh && exec /bin/sh /tmp/mirror-lf.sh"
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    container_name: giftset-staging-migrate
+    restart: "no"
+    environment:
+      SQLITE_PATH: /app/.data/leads.sqlite
+      SMARTGIFT_MYSQL_ENABLED: ${SMARTGIFT_MYSQL_ENABLED:-true}
+      SMARTGIFT_MYSQL_HOST: ${SMARTGIFT_MYSQL_HOST:-host.docker.internal}
+      SMARTGIFT_MYSQL_PORT: ${SMARTGIFT_MYSQL_PORT:-3307}
+      SMARTGIFT_MYSQL_USER: ${SMARTGIFT_MYSQL_USER:-biz}
+      SMARTGIFT_MYSQL_PASSWORD: ${SMARTGIFT_MYSQL_PASSWORD:-biz_secret}
+      SMARTGIFT_MYSQL_DATABASE: ${SMARTGIFT_MYSQL_DATABASE:-smartgift}
+    volumes:
+      - giftset_staging_leads:/app/.data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${STAGING_PUBLIC_SITE_URL:-http://localhost:3011}
+        NEXT_PUBLIC_ALLOW_INDEXING: "false"
+        CMS_MODE: ${STAGING_CMS_MODE:-mock}
+        STRAPI_URL: ${STAGING_STRAPI_URL:-http://host.docker.internal:1337}
+        STRAPI_FALLBACK_TO_MOCK: "true"
+    container_name: giftset-staging-web
+    restart: unless-stopped
+    ports:
+      # Avoid 3001 — often taken by other local Node apps on this workstation.
+      - "3011:3000"
+    env_file:
+      - path: .env.staging
+        required: false
+    environment:
+      NODE_ENV: production
+      RUN_DB_MIGRATIONS: "true"
+      NEXT_PUBLIC_ALLOW_INDEXING: "false"
+      CMS_MODE: ${STAGING_CMS_MODE:-mock}
+      STRAPI_URL: ${STAGING_STRAPI_URL:-http://host.docker.internal:1337}
+      STRAPI_FALLBACK_TO_MOCK: "true"
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-giftset-app}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-giftsetAppDevKey1}
+      MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE:-terabis-private}
+      MINIO_BUCKET_PUBLIC: ${MINIO_BUCKET_PUBLIC:-terabis-public}
+      MINIO_BUCKET_CONFIDENTIAL: ${MINIO_BUCKET_CONFIDENTIAL:-terabis-confidential}
+      MINIO_BUCKET_RESTRICTED: ${MINIO_BUCKET_RESTRICTED:-terabis-restricted}
+      MINIO_REGION: us-east-1
+      MINIO_USE_SSL: "false"
+      MINIO_SSE: AES256
+      MINIO_OBJECT_LOCK: "1"
+      MINIO_RETENTION_DAYS: ${MINIO_RETENTION_DAYS:-1825}
+      MINIO_SIGNED_URL_TTL: "300"
+      MINIO_REPLICA_ENDPOINT: http://minio-replica:9000
+    volumes:
+      - giftset_staging_leads:/app/.data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      minio-replica:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health?deep=1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  giftset_staging_pgdata:
+  giftset_staging_leads:
+  giftset_staging_minio:
+  giftset_staging_minio_replica:

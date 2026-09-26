@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: SmartGift Public SMG BFF
+  version: v1
+  description: |
+    Browser CORS adapters for smg-ui against https://tarabiz.next-dev.net.
+
+    - Auth: none (rate-limited by IP)
+    - CORS: `PUBLIC_SMG_ORIGINS`
+    - Ops console stays at `/ops/*` (session auth, unchanged)
+    - Partner API (`/api/partner/v1`) remains API-key, no CORS
+servers:
+  - url: https://tarabiz.next-dev.net
+  - url: http://localhost:3000
+tags:
+  - name: Discovery
+  - name: Brief
+  - name: Catalog
+paths:
+  /api/public:
+    get:
+      tags: [Discovery]
+      summary: Public BFF discovery
+      operationId: getPublicDiscovery
+      responses:
+        "200":
+          description: Resource list
+  /api/public/brief:
+    options:
+      tags: [Brief]
+      summary: CORS preflight
+      responses:
+        "204":
+          description: No content
+    post:
+      tags: [Brief]
+      summary: Submit smartgift-brief/1
+      description: Maps to submitQuotePayload → /ops/quotes/{requestId}
+      operationId: postPublicBrief
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmartgiftBrief"
+      responses:
+        "200":
+          description: Quote accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BriefSuccess"
+        "400":
+          description: Validation error
+        "429":
+          description: Rate limited
+  /api/public/catalog/products:
+    get:
+      tags: [Catalog]
+      summary: Public-safe products (no prices)
+      operationId: listPublicProducts
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100, maximum: 500 }
+      responses:
+        "200":
+          description: Product list
+        "503":
+          description: Catalog unavailable
+  /api/public/catalog/promotions:
+    get:
+      tags: [Catalog]
+      summary: Promotions / clearance
+      operationId: listPublicPromotions
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100, maximum: 500 }
+      responses:
+        "200":
+          description: Promotion list
+        "503":
+          description: Catalog unavailable
+  /api/public/catalog/retail:
+    get:
+      tags: [Catalog]
+      summary: Retail SKUs with sell price
+      operationId: listPublicRetail
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100, maximum: 500 }
+      responses:
+        "200":
+          description: Retail list
+        "503":
+          description: Catalog unavailable
+components:
+  schemas:
+    SmartgiftBrief:
+      type: object
+      required: [schema, contact, consent]
+      properties:
+        schema:
+          type: string
+          enum: [smartgift-brief/1]
+        submitted_at:
+          type: string
+        source:
+          type: string
+          example: smg-ui
+        page_url:
+          type: string
+        brief:
+          type: object
+          properties:
+            recipient: { type: string }
+            occasion: { type: string }
+            tier: { type: string }
+            qty: { type: integer, minimum: 1 }
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              code: { type: string }
+              name: { type: string }
+              qty: { type: integer, minimum: 1 }
+        bundle:
+          type: object
+          properties:
+            groups:
+              type: array
+              items:
+                type: object
+                properties:
+                  label: { type: string }
+                  qty: { type: integer }
+                  codes:
+                    type: array
+                    items: { type: string }
+        contact:
+          type: object
+          required: [name, email, phone]
+          properties:
+            name: { type: string, minLength: 2 }
+            company: { type: string }
+            email: { type: string, format: email }
+            phone: { type: string }
+            note: { type: string }
+        notes: { type: string }
+        consent: { type: boolean, enum: [true] }
+        startedAt: { type: integer }
+        website: { type: string, description: Honeypot — must be empty }
+    BriefSuccess:
+      type: object
+      required: [ok, requestId, opsPath]
+      properties:
+        ok: { type: boolean, enum: [true] }
+        requestId: { type: string, example: RFQ-20260910-AABBCCDDEEFF }
+        opsPath: { type: string, example: /ops/quotes/RFQ-20260910-AABBCCDDEEFF }
+        neutral: { type: boolean }

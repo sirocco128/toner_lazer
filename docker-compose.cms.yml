@@ -1,0 +1,10 @@
+# Optional overlay for local CMS work.
+#
+# Local/dev: Strapi still runs on the host from ./cms (see docs/SPRINT1-LOCAL-CMS.md).
+# NAS/Portainer: Strapi is a container in docker-compose.portainer.yml.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.cms.yml up -d postgres
+#   npm run cms:bootstrap
+#   cd cms && npm install && npm run develop
+
+services: {}

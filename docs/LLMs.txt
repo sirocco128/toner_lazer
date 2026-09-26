@@ -1,0 +1,3353 @@
+# LLMs.text — PREMIUM GIFT SET B2B WEBSITE
+
+DOCUMENT_TYPE: AI Development Handoff / Product Specification / Implementation Runbook
+PROJECT_NAME: Premium Gift Set Starter
+RELEASE_BASELINE: v1.1.0 Production Starter
+DOCUMENT_VERSION: 1.0
+DOCUMENT_DATE: 2026-09-03
+PRIMARY_LANGUAGE: Thai
+CODE_LANGUAGE: English
+TARGET_RUNTIME: Node.js 22+
+TARGET_FRAMEWORK: Next.js 15 App Router
+SOURCE_BASELINE:
+- premium-giftset-starter-v1.1-production.zip
+- README.md
+- RELEASE_NOTES.md
+- VERIFICATION.md
+- SECURITY.md
+- strapi/README.md
+- Existing source code, migrations, tests, Dockerfile, GitLab CI, and environment templates inside the release
+
+======================================================================
+0. วิธีใช้เอกสารนี้
+======================================================================
+
+เอกสารนี้เป็นคำสั่งและข้อกำหนดฉบับเต็มสำหรับให้ LLM, Coding Agent, Cursor, Claude Code, Codex, ChatGPT หรือทีมพัฒนารับช่วงโครงการ Premium Gift Set ต่อจาก Release v1.1.0 โดยต้องถือ Source Code ใน ZIP เป็น Baseline ที่ใช้อ้างอิงจริง
+
+ก่อนแก้ไขระบบทุกครั้ง Agent ต้องทำตามลำดับนี้:
+
+1. แตก ZIP และอ่าน README.md, RELEASE_NOTES.md, VERIFICATION.md, SECURITY.md และ strapi/README.md ให้ครบ
+2. ตรวจ package.json, .env.example, next.config.mjs, Dockerfile, .gitlab-ci.yml, Database Migration และ Tests
+3. รันคำสั่ง Quality Gate ที่ Runtime รองรับ
+4. แยกให้ชัดว่าเรื่องใด “มีอยู่แล้ว”, “มีแต่ยังไม่พร้อม Production”, “ยังไม่ได้พัฒนา”
+5. ห้ามอ้างว่า Build, Test, Lighthouse, Container หรือ Deployment ผ่าน หากยังไม่ได้รันและเห็นผลจริง
+6. ห้ามลบ Security Guard, noindex Guard, RFQ Persistence, Webhook Outbox, Validation, Accessibility หรือ Test เดิมเพื่อให้ Build ผ่านง่ายขึ้น
+7. ทุกการเปลี่ยนแปลงต้องเพิ่มหรือปรับ Test, Documentation, Environment Template, Migration และ Rollback Note ที่เกี่ยวข้อง
+8. ห้ามเปิด Search Indexing ด้วยข้อมูลตัวอย่าง
+9. ห้ามนำ Secret, Token, Customer Data, SQLite Database หรือ Production URL เข้า Git
+10. ใช้ภาษาไทยสำหรับ UI และเอกสารธุรกิจ ใช้ภาษาอังกฤษสำหรับ Code, Filename, API Field, Commit และ Technical Identifier
+
+คำว่า CURRENT ในเอกสารนี้หมายถึงสิ่งที่มีอยู่ใน v1.1
+คำว่า REQUIRED หมายถึงสิ่งที่ต้องทำก่อน Go-live
+คำว่า TARGET หรือ PROPOSED หมายถึงความสามารถใน P2 หรือสถาปัตยกรรมอนาคตที่ยังไม่ได้อยู่ใน Source Code ปัจจุบัน
+
+======================================================================
+1. บทบาทของ AI/ทีมพัฒนา
+======================================================================
+
+ทำหน้าที่เป็น Senior Product Engineer, Solution Architect, UX Engineer, SEO Engineer, Security Engineer และ DevOps Engineer สำหรับเว็บไซต์ B2B รับออกแบบและผลิต Gift Set ของขวัญองค์กร
+
+เป้าหมายไม่ใช่เพียงสร้าง Landing Page แต่ต้องสร้างระบบที่:
+
+- สื่อสารบริการรับผลิต Gift Set ได้ชัดเจน
+- รองรับการค้นหาผ่าน Search Engine และ Generative Engine
+- ให้ทีมการตลาดจัดการ Product, Category, Article, FAQ และ Portfolio ผ่าน Strapi
+- รับคำขอใบเสนอราคาอย่างปลอดภัย
+- ไม่ทำ Lead สูญหายเมื่อ Webhook หรือระบบปลายทางล่ม
+- เชื่อม NextERP/CRM และ LINE OA ได้ในระยะถัดไป
+- รองรับการเติบโตจาก Single Instance ไปสู่ RDS/Redis และ Multi-instance
+- มี Deployment Gate, Security Gate, Content Gate, Legal Gate และ UAT Gate
+
+หลักการตัดสินใจ:
+
+- Correctness มาก่อนความเร็ว
+- Data integrity มาก่อน UI effect
+- Accessibility มาก่อน animation
+- Security และ Privacy เป็น Default
+- Production ต้อง Fail Closed ไม่ใช่ Silent Fallback
+- Public Content ต้องผ่าน Approval Workflow
+- ราคา สต็อก Lead Time และสถานะสินค้าห้ามให้ AI เดา
+
+======================================================================
+2. บริบทธุรกิจ
+======================================================================
+
+ระบบนี้เป็นเว็บไซต์ B2B สำหรับธุรกิจรับผลิตของขวัญองค์กรและสินค้าพรีเมียม เช่น:
+
+- Premium Gift Set
+- Welcome Kit สำหรับพนักงานใหม่
+- ของขวัญปีใหม่สำหรับคู่ค้า
+- Gift Set งานสัมมนาและ Team Building
+- Gift Set รักษ์โลกและ ESG
+- กระบอกน้ำ สมุด ปากกา ถุงผ้า อุปกรณ์ไอที และ Powerbank
+- กล่องจั่วปัง กล่องลูกฟูก กล่องแม่เหล็ก และบรรจุภัณฑ์สั่งทำ
+- งานสกรีน พิมพ์ UV เลเซอร์ ปัก ปั๊มฟอยล์ และเทคนิคตกแต่งอื่น
+- งานแพ็กแยกรายบุคคล แบ่งจุดส่ง และกระจายจัดส่ง
+
+กลุ่มผู้ใช้หลัก:
+
+1. Procurement ของบริษัทหรือหน่วยงาน
+2. HR และ People Team ที่จัด Welcome Kit หรือ Employee Gift
+3. Marketing และ Event Team
+4. Corporate Communication และ CSR/ESG Team
+5. เจ้าของกิจการและผู้บริหาร
+6. ฝ่ายขายภายในบริษัท Gift Set
+7. Content Editor และ SEO Team
+8. Designer และ Production Coordinator
+9. System Administrator และ DevOps
+10. Legal/DPO ผู้ตรวจเนื้อหา PDPA
+
+ปัญหาธุรกิจที่ระบบต้องแก้:
+
+- ลูกค้าไม่รู้ว่าควรเลือกสินค้าอะไรให้ตรงงบและโอกาส
+- ราคา B2B เปลี่ยนตามจำนวน สเปค โลโก้ กล่อง และสถานที่จัดส่ง
+- Lead จาก Ads ต้องติดตามที่มาได้
+- คำขอใบเสนอราคาอาจสูญหายเมื่อส่งต่อไป n8n, CRM หรือ LINE ไม่สำเร็จ
+- เนื้อหา Product/SEO ต้องแก้ได้โดยทีมการตลาดโดยไม่แก้ Code
+- Portfolio ต้องแสดงเฉพาะงานที่ได้รับสิทธิใช้ชื่อ รูป และโลโก้
+- Demo/Staging ต้องไม่ถูก Search Engine จัดทำดัชนี
+
+======================================================================
+3. เป้าหมายและขอบเขต
+======================================================================
+
+3.1 เป้าหมายหลัก
+
+- สร้างเว็บไซต์ที่เร็ว ใช้งานง่าย Responsive และรองรับภาษาไทย
+- มี Information Architecture สำหรับ Product, Category, Service, Portfolio, Blog และ Contact
+- มี Metadata, Canonical, Sitemap, Robots และ JSON-LD ที่ถูกต้อง
+- มี RFQ Flow ที่บันทึก Lead ก่อนส่ง Webhook
+- มี Request ID สำหรับติดตาม
+- มี Anti-spam, Rate Limit, Consent และ UTM Attribution
+- มี Strapi Adapter ที่ป้องกันข้อมูลผิดรูปแบบ
+- มี Docker, PM2, Health Check และ GitLab CI Quality Gate
+- เตรียมทางขยายไป RDS/Redis, NextERP/CRM, LINE OA, Dashboard และ AI Recommendation
+
+3.2 สิ่งที่ไม่ใช่ขอบเขตปัจจุบัน
+
+CURRENT v1.1 ยังไม่ใช่:
+
+- E-commerce ที่ชำระเงินออนไลน์
+- ระบบ Order Management เต็มรูปแบบ
+- ระบบ Inventory หรือ Pricing Engine ของจริง
+- Strapi Application ที่ Deploy พร้อมใช้งาน
+- Multi-instance HA Lead Service
+- Online Design Editor เต็มรูปแบบ
+- Production NextERP/CRM Integration
+- Production LINE OA Messaging Integration
+- Production AI Recommendation Service
+
+3.3 หลักการเรื่องราคา
+
+ราคาในเว็บไซต์เป็นราคาโดยประมาณเท่านั้น ต้องมีข้อความกำกับว่าราคาสุดท้ายขึ้นกับ:
+
+- จำนวน
+- Product Variant
+- สีและวัสดุ
+- เทคนิคโลโก้
+- จำนวนตำแหน่งพิมพ์
+- บรรจุภัณฑ์
+- Proof/Sample
+- ภาษี
+- สถานที่และรูปแบบจัดส่ง
+- Lead Time และคิวผลิต
+
+การส่ง RFQ ไม่ถือเป็นคำสั่งซื้อ สัญญา หรือภาระชำระเงิน
+
+======================================================================
+4. สถานะโครงการ ณ Release v1.1
+======================================================================
+
+4.1 P0 — ปิดแล้วใน Source Code
+
+- มี Route /customize-gift-set
+- มี Route /portfolio
+- มี Portfolio Schema และ Strapi Template
+- มี POST /api/revalidate พร้อม Bearer Secret
+- มี Dockerfile แบบ Multi-stage
+- มี .dockerignore
+- มี PM2 ecosystem.config.cjs
+- มี /api/health และ Deep Database Check
+- มี Organization JSON-LD
+- มี Conditional LocalBusiness JSON-LD
+- มี .prose-custom
+- มี Safe Article Renderer
+- Navbar, Mobile Navigation, Footer และ Sitemap ถูกอัปเดต
+- มี Privacy และ Terms Template
+- ไม่พบโฟลเดอร์ชื่อผิดจาก Brace Expansion ใน Release
+- มี Release Manifest และ SHA-256
+
+4.2 P1 — ทำแล้วบางส่วน
+
+P1.1 สร้าง Strapi ที่รันได้จริง
+STATUS: NOT COMPLETE
+มีเฉพาะ Blueprint, Schema และ Template สำหรับคัดลอกเข้า Strapi Project แต่ไม่มี Strapi App, Admin Build, Database, Media Provider, Deployment หรือ Secret
+
+P1.2 Strapi Adapter และ Schema Validation
+STATUS: IMPLEMENTED
+รองรับ Strapi v4/v5, Media Mapping, Relation Mapping, Pagination, Timeout, Cache Tags, Zod Validation และ Controlled Mock Fallback
+
+P1.3 ระบบ Lead/RFQ จริง
+STATUS: IMPLEMENTED FOR SINGLE INSTANCE
+บันทึก SQLite, สร้าง RFQ ID, Rate Limit, Consent, Attribution, Webhook Outbox และ Retry ได้ แต่ยังไม่ใช่ RDS/Redis Multi-instance
+
+P1.4 PDPA, Anti-spam และ Security Headers
+STATUS: BASELINE IMPLEMENTED
+มี Consent, Privacy/Terms Template, Honeypot, Minimum Form Time, Rate Limit, IP HMAC, CSP, HSTS เฉพาะ HTTPS Production และ Security Headers แต่ Legal Approval, Retention, DSR Workflow, nonce-based CSP และ Security Scan ยังต้องทำ
+
+P1.5 Mobile Navigation
+STATUS: IMPLEMENTED
+มี Drawer, Focus Trap, Escape Key, Scroll Lock, Return Focus, Overlay Close, CTA โทรและ LINE
+
+P1.6 ข้อมูลและรูปจริง
+STATUS: NOT COMPLETE
+ข้อมูล ชื่อแบรนด์ เบอร์ อีเมล LINE ที่อยู่ รูป Product และ Portfolio เป็นตัวอย่าง
+
+P1.7 Test, Docker CI/CD, Health Check และ Rollback
+STATUS: PARTIAL
+มี Unit Tests, GitLab Quality Jobs, Lighthouse Config, Kaniko Container Build และ Health Check แต่ Automated Staging Deploy, Production Approval, Smoke Test หลัง Deploy และ Automated Rollback ยังไม่มี
+
+P1.8 Deploy Staging และ UAT
+STATUS: NOT COMPLETE
+
+4.3 P2 — ยังไม่ได้พัฒนาใน v1.1
+
+- Quote Basket
+- Product Configurator
+- Price Tier ตามจำนวน
+- Upload Logo/Artwork
+- Online Mockup
+- NextERP/CRM Integration
+- LINE OA Messaging API Integration
+- Lead Dashboard และ Conversion Analytics
+- AI Recommendation
+
+======================================================================
+5. Tech Stack ปัจจุบัน
+======================================================================
+
+Runtime:
+- Node.js >= 22.0.0
+
+Frontend/Full-stack:
+- Next.js 15.5.25
+- React 19.2.8
+- React DOM 19.2.8
+- TypeScript 5.9.3
+- App Router
+- React Server Components
+- Server Actions
+- Route Handlers
+- ISR และ Cache Tags
+
+Validation:
+- Zod 3.23.8
+
+Styling:
+- Tailwind CSS 3.4.19
+- PostCSS 8.5.26
+- Autoprefixer 10.5.4
+
+Quality:
+- ESLint 9.39.5
+- eslint-config-next 15.5.25
+- TypeScript strict check
+- Node Test Runner
+- Lighthouse CI 0.14.0
+
+Data:
+- SQLite ผ่าน node:sqlite
+- WAL Mode
+- SQL Migration
+
+CMS:
+- Strapi v5 Target
+- Adapter รองรับ Strapi v4 Response Shape ด้วย
+
+Deployment:
+- Next.js standalone output
+- Docker multi-stage
+- PM2 ทางเลือกสำหรับ VM
+- GitLab CI
+- Kaniko สำหรับสร้าง Container Image
+
+======================================================================
+6. Package Scripts
+======================================================================
+
+ใช้คำสั่งตาม package.json:
+
+- npm run dev
+  เปิด Next.js Development Server
+
+- npm run build
+  รัน prebuild Environment Validation แล้วสร้าง Next.js Production Build
+
+- npm run start
+  เปิด Next.js Server จาก Build
+
+- npm run lint
+  รัน ESLint ทุกไฟล์และไม่อนุญาต Warning
+
+- npm run typecheck
+  รัน tsc --noEmit
+
+- npm run test
+  Compile Test ด้วย tsconfig.test.json แล้วรัน Node Test Runner
+
+- npm run check
+  รัน lint + typecheck + test + build
+
+- npm run db:migrate
+  สร้าง/อัปเดต SQLite Schema
+
+- npm run lhci
+  รัน Lighthouse CI
+
+- npm run validate:env
+  ตรวจ Environment ตอน Build
+
+- npm run validate:runtime
+  ตรวจ Runtime Environment ก่อนเปิด Service
+
+- npm run build:standalone
+  Build แล้วคัดลอก public และ .next/static เข้า Standalone Directory
+
+======================================================================
+7. โครงสร้างไฟล์สำคัญ
+======================================================================
+
+premium-giftset-starter-v1.1-production/
+├── app/
+│   ├── actions/quote.ts
+│   ├── api/
+│   │   ├── health/route.ts
+│   │   ├── jobs/retry-quotes/route.ts
+│   │   └── revalidate/route.ts
+│   ├── blog/page.tsx
+│   ├── blog/[slug]/page.tsx
+│   ├── contact/page.tsx
+│   ├── customize-gift-set/page.tsx
+│   ├── giftset/[category]/page.tsx
+│   ├── portfolio/page.tsx
+│   ├── premium-giftset/page.tsx
+│   ├── privacy/page.tsx
+│   ├── products/page.tsx
+│   ├── products/[slug]/page.tsx
+│   ├── terms/page.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── not-found.tsx
+│   ├── page.tsx
+│   ├── robots.ts
+│   └── sitemap.ts
+├── components/
+│   ├── EnvironmentBanner.tsx
+│   ├── FaqAccordion.tsx
+│   ├── Footer.tsx
+│   ├── JsonLd.tsx
+│   ├── MobileMenu.tsx
+│   ├── Navbar.tsx
+│   ├── QuoteForm.tsx
+│   └── SafeArticleContent.tsx
+├── db/migrations/001_create_quote_requests.sql
+├── lib/
+│   ├── data.ts
+│   ├── database.ts
+│   ├── metadata.ts
+│   ├── quote-repository.ts
+│   ├── quote-schema.ts
+│   ├── quote-service.ts
+│   ├── quote-types.ts
+│   ├── sanitize.ts
+│   ├── seo.ts
+│   ├── site.ts
+│   ├── strapi-adapter.ts
+│   └── strapi.ts
+├── public/images/
+├── scripts/
+│   ├── load-env.mjs
+│   ├── migrate.mjs
+│   ├── prepare-standalone.mjs
+│   ├── run-tests.mjs
+│   ├── validate-env.mjs
+│   └── validate-runtime.mjs
+├── strapi/
+│   ├── content-types/
+│   ├── templates/src/
+│   └── README.md
+├── tests/
+│   ├── quote-schema.test.ts
+│   ├── quote-storage.test.ts
+│   ├── sanitize.test.ts
+│   └── strapi-adapter.test.ts
+├── .dockerignore
+├── .env.example
+├── .gitlab-ci.yml
+├── .lighthouserc.json
+├── Dockerfile
+├── SECURITY.md
+├── VERIFICATION.md
+├── RELEASE_NOTES.md
+├── ecosystem.config.cjs
+├── next.config.mjs
+├── package.json
+├── package-lock.json
+├── tailwind.config.ts
+└── tsconfig.json
+
+======================================================================
+8. Architecture ปัจจุบัน
+======================================================================
+
+Logical Flow:
+
+Browser
+  -> Next.js App Router
+  -> Server Components / Client Components
+  -> Strapi Data Access Layer หรือ Mock Data
+  -> Rendered HTML + Metadata + JSON-LD
+
+RFQ Flow:
+
+Browser QuoteForm
+  -> Server Action submitQuote
+  -> Zod Validation
+  -> Honeypot Check
+  -> Minimum Form Time Check
+  -> Resolve Client IP from Trusted Proxy Headers
+  -> HMAC Hash IP
+  -> Atomic Rate Limit
+  -> Generate RFQ Request ID
+  -> Persist Lead and Outbox State
+  -> Deliver Webhook
+  -> Update Delivery Status
+  -> Retry Worker for Pending/Failed Records
+  -> Return Request ID to Customer
+
+CMS Flow:
+
+Strapi
+  -> REST API
+  -> Server-only API Token
+  -> Fetch with Timeout + Revalidate + Cache Tags
+  -> Strapi v4/v5 Unwrap
+  -> Zod Validation
+  -> Media/Relation Mapping
+  -> Domain Model
+  -> Page Rendering
+
+Publish Flow:
+
+Content Editor
+  -> Draft
+  -> Content Review
+  -> SEO Review
+  -> Approval
+  -> Publish in Strapi
+  -> Strapi Webhook
+  -> POST /api/revalidate
+  -> Revalidate Path + Cache Tag
+
+Deployment Flow:
+
+Git Push/Tag
+  -> GitLab CI
+  -> npm ci
+  -> Lint
+  -> Typecheck
+  -> Unit Test
+  -> Deterministic Mock/noindex Build
+  -> Lighthouse
+  -> Kaniko Container Build
+  -> Container Registry
+  -> REQUIRED: Staging Deploy
+  -> REQUIRED: Smoke Test and UAT
+  -> REQUIRED: Manual Production Approval
+
+======================================================================
+9. Rendering และ Cache Strategy
+======================================================================
+
+Route /:
+- หน้าแรก
+- Mock Mode เป็น Static Build
+- เมื่อใช้ Strapi การ Fetch แต่ละ Collection ใช้ Revalidate ตาม Data Source
+- Categories 3600 วินาที
+- Products 300 วินาที
+
+Route /premium-giftset:
+- ISR 3600 วินาที
+
+Route /products:
+- ISR 300 วินาที
+
+Route /products/[slug]:
+- ISR 300 วินาที
+- generateStaticParams จาก Product ที่มีอยู่
+- dynamicParams=true รองรับ Product ใหม่หลัง Build
+
+Route /giftset/[category]:
+- ISR 3600 วินาที
+- generateStaticParams
+- dynamicParams=true
+
+Route /portfolio:
+- ISR 3600 วินาที
+
+Route /blog:
+- ISR 3600 วินาที
+
+Route /blog/[slug]:
+- ISR 3600 วินาที
+- generateStaticParams
+- dynamicParams=true
+
+Route /contact, /privacy, /terms:
+- Static ตาม Source Code ปัจจุบัน
+
+API Routes:
+- Node.js Runtime
+- force-dynamic
+- Cache-Control: no-store
+
+ห้ามใช้ client-side fetch สำหรับข้อมูล SEO-critical หากไม่จำเป็น เพราะต้องให้ Metadata และ Content อยู่ใน HTML ที่ Search Engine อ่านได้
+
+======================================================================
+10. Route และ Page Specification
+======================================================================
+
+10.1 Route: /
+Purpose:
+- แนะนำแบรนด์และบริการ
+- ส่งผู้ใช้ไป Premium Gift Set, Product หรือ RFQ
+
+Sections:
+1. Hero
+   - H1: เพราะการให้ คือจุดเริ่มต้นของสิ่งดี ๆ
+   - Value proposition เรื่องรับผลิต Gift Set สกรีนโลโก้สำหรับองค์กร
+   - MOQ เริ่ม 30 เซ็ตใน Demo Content
+   - CTA ดู Premium Gift Set
+   - CTA ขอใบเสนอราคา
+   - Hero Image ใช้ next/image และ priority
+
+2. Gift Set Categories
+   - ดึง Category จาก CMS
+   - Card มีรูป ชื่อ คำอธิบาย และ Link
+
+3. Featured Products
+   - แสดง 3 รายการแรก
+   - ชื่อ ราคาโดยประมาณ MOQ
+
+REQUIRED FUTURE:
+- เพิ่ม Social Proof จริง
+- เพิ่ม Case Study ที่ได้รับอนุญาต
+- เพิ่ม Seasonal Campaign แบบ CMS-driven
+- เพิ่ม Analytics Event บน CTA
+
+10.2 Route: /premium-giftset
+Purpose:
+- SEO Landing Page หลัก
+- รับ Traffic จาก Organic Search และ Google Ads
+
+Sections:
+1. Breadcrumb
+2. Hero และ Value Proposition ภายใน 100 คำแรก
+3. CTA ขอใบเสนอราคาฟรี
+4. CTA LINE OA
+5. Gift Set Categories
+6. Materials
+   - Rigid Box
+   - Corrugated Box
+7. 4-step Order Process
+   - แจ้งโจทย์และงบประมาณ
+   - เลือกสินค้าและออกแบบ
+   - อนุมัติตัวอย่าง
+   - ผลิตและจัดส่ง
+8. Trusted Organization Segments
+9. FAQ Accordion
+10. Embedded Quote Form
+
+Structured Data:
+- FAQPage
+- BreadcrumbList
+
+10.3 Route: /giftset/[category]
+Purpose:
+- Landing Page ต่อ Category
+
+Behavior:
+- โหลด Category ตาม Slug
+- โหลด Product ที่ Relation ตรง Category
+- Metadata จาก SEO Component
+- แสดง Empty State เมื่อไม่มี Product
+- Breadcrumb JSON-LD
+- notFound เมื่อไม่พบ Category
+
+10.4 Route: /products
+Purpose:
+- Product Catalog
+
+Card Fields:
+- Main Image
+- Name
+- priceRange
+- minOrder
+
+REQUIRED FUTURE:
+- Filter
+- Search
+- Pagination หรือ Infinite Pagination ตามจำนวน Product
+- Sort
+- Category Filter
+- Budget Filter
+- MOQ Filter
+- Availability/Lead Time Filter จาก NextERP
+
+10.5 Route: /products/[slug]
+Purpose:
+- Product Detail และ Conversion
+
+Sections:
+1. Breadcrumb
+2. Main Image
+3. Additional Images สูงสุด 4 Thumbnail ใน UI ปัจจุบัน
+4. Product Name
+5. Description
+6. Material
+7. MOQ
+8. Approximate Price
+9. Price Disclaimer
+10. CTA ขอราคาเซ็ตนี้
+11. Quote Form ที่เติม Product Name และ Product Slug อัตโนมัติ
+
+Structured Data:
+- Product
+- AggregateOffer เมื่อมี priceMin หรือ priceMax
+- BreadcrumbList
+
+REQUIRED FUTURE:
+- Interactive Image Gallery
+- Variant
+- Color
+- Decoration Position
+- Packaging Option
+- Related Products
+- Spec Download
+- Quote Basket
+- Stock/Lead Time จาก NextERP
+
+10.6 Route: /customize-gift-set
+Purpose:
+- รับ Brief จากลูกค้าที่ไม่มี SKU ชัดเจน
+
+Sections:
+1. Hero
+2. Customizable Elements
+   - สินค้าในชุด
+   - บรรจุภัณฑ์
+   - อัตลักษณ์แบรนด์
+   - การแพ็กและจัดส่ง
+3. Workflow 5 ขั้นตอน
+   - รับ Brief
+   - คัดเลือกสินค้าและ Concept
+   - Mockup และยืนยันสเปค
+   - Proof/Sample Approval
+   - QC, Packing, Delivery
+4. Quote Form
+
+10.7 Route: /portfolio
+Purpose:
+- แสดงผลงานและเพิ่มความน่าเชื่อถือ
+
+Fields:
+- Image
+- Industry
+- Title
+- Client
+- Summary
+- Services
+- Quantity
+
+Current Demo Guard:
+- เมื่อ CMS_MODE ไม่ใช่ strapi ให้แสดงข้อความว่าข้อมูลเป็นตัวอย่าง
+
+Portfolio Governance:
+- ห้าม Publish ชื่อลูกค้า โลโก้ รูป หรือคำรับรองโดยไม่มีสิทธิ
+- ต้องมี Consent/Release Evidence ภายในองค์กร
+- ถ้าไม่มีสิทธิใช้ชื่อจริง ให้ Anonymous Description
+
+10.8 Route: /blog
+Purpose:
+- SEO Content Hub
+
+Card Fields:
+- Cover
+- Title
+- Excerpt
+
+10.9 Route: /blog/[slug]
+Purpose:
+- SEO Article
+
+Features:
+- Metadata จาก CMS
+- BlogPosting JSON-LD
+- BreadcrumbList
+- Author
+- Published Date แสดงตาม Asia/Bangkok
+- Safe Article Block Rendering
+- ไม่ Inject Raw HTML จาก CMS
+
+10.10 Route: /contact
+Purpose:
+- Main RFQ Page
+
+Sections:
+- Contact Details
+- Phone
+- LINE OA
+- Email
+- Address เมื่อมี
+- Opening Hours
+- Full Quote Form
+
+10.11 Route: /privacy
+Current:
+- เป็น Template
+- อธิบายข้อมูลที่เก็บ วัตถุประสงค์ การส่งต่อ Retention และสิทธิ
+
+REQUIRED:
+- Legal/DPO Review
+- Controller Identity
+- Contact for Data Subject Rights
+- Legal Basis
+- Retention Period จริง
+- Processor/Subprocessor List
+- Cross-border Transfer ถ้ามี
+- Cookie/Analytics Disclosure
+
+10.12 Route: /terms
+Current:
+- เป็น Template
+- อธิบายราคาโดยประมาณ RFQ ไม่ใช่ Order และสิทธิใน Logo/Artwork
+
+REQUIRED:
+- Terms of Sale
+- Payment Terms
+- Sample/Proof Approval
+- Cancellation
+- Warranty/Defect
+- Delivery
+- Force Majeure
+- IP Ownership
+- Governing Law
+
+10.13 Route: /not-found
+- แสดงข้อความไม่พบหน้า
+- CTA กลับหน้าแรก
+- CTA ดู Premium Gift Set
+
+======================================================================
+11. Navigation และ Responsive UX
+======================================================================
+
+Desktop Navbar:
+- Sticky Header
+- Logo/Brand Name
+- Premium Gift Set
+- สินค้าพรีเมียม
+- ออกแบบเซ็ตเอง
+- ผลงาน
+- บทความ
+- CTA ขอใบเสนอราคา
+
+Mobile Menu:
+- เปิดด้วยปุ่ม Hamburger
+- aria-expanded
+- aria-controls
+- role=dialog
+- aria-modal=true
+- Focus Trap
+- Escape Key ปิดเมนู
+- ปิดเมื่อกด Overlay
+- Body Scroll Lock
+- Return Focus ไป Trigger
+- CTA ขอใบเสนอราคา
+- โทรฝ่ายขาย
+- LINE OA
+
+Footer:
+- Brand Description
+- Service Links
+- Website Information
+- Privacy
+- Terms
+- Contact Details
+- Legal Name เมื่อมี
+- Current Year
+
+REQUIRED FUTURE UX:
+- Active Navigation State
+- Sticky Mobile Bottom CTA โดยต้องไม่บดบัง Content
+- Loading State และ Error Boundary
+- Search UI สำหรับ Catalog
+- Empty State ทุก Collection
+- Form Recovery เมื่อ Network Error
+- Analytics Event สำหรับ Menu, CTA, Call, LINE และ Submit
+
+======================================================================
+12. Design System
+======================================================================
+
+แหล่งความจริงของสี ธีม ฟอนต์ dark mode และวิธี retheme:
+ดู docs/DESIGN-LLMS.txt
+
+Brand Direction:
+- Premium Corporate Packaging
+- Dark Green + Brass/Gold
+- เรียบ สุภาพ เชื่อถือได้ ไม่ใช้ Visual ที่ดูเป็น Marketplace ราคาถูก
+
+Color Tokens (ต้องแก้คู่กันใน app/globals.css และ tailwind.config.ts):
+- forest: #14352A
+- forest.light: #1E4A3A
+- forest.mist: #E9F0EA
+- brass: #B08A3E
+- brass.soft: #D9C08A
+- ink: #22282C
+- paper: #FFFFFF
+
+Typography (ของจริงใน app/layout.tsx):
+- Sarabun = ฟอนต์หลักของ body
+- Geist, Noto Sans Thai = อยู่ใน font-sans stack
+- Leelawadee UI, Tahoma, system-ui = fallback
+
+Theme status:
+- Light only ใน UI ที่ผู้ใช้เห็น
+- .dark และ ThemeToggle มีในโค้ดแต่ยังไม่เปิด
+- ThemeProvider เป็น no-op
+- คอมโพเนนต์ใช้ bg-forest / bg-brass ไม่ใช้ bg-primary
+
+Layout:
+- maxWidth.content = 72rem
+- Mobile-first
+- Storefront CTA = rounded-full brass
+- Ops ปุ่มหลัก = bg-forest มุมเหลี่ยมกว่า
+- ใช้ Contrast ที่ผ่าน Accessibility
+
+Image:
+- next/image เท่านั้นสำหรับภาพ Content หลัก
+- AVIF/WebP
+- กำหนด width/height ผ่าน fill + aspect ratio
+- Hero Image ใช้ priority เฉพาะ Above-the-fold
+- Alt Text ต้องอธิบายภาพจริง ไม่ Keyword Stuffing
+- ห้ามใช้ภาพ Placeholder เมื่อ Production
+
+Motion:
+- เคารพ prefers-reduced-motion
+- ลด Animation และ Transition เหลือ 0.01ms เมื่อผู้ใช้เลือก Reduce Motion
+
+======================================================================
+13. Accessibility Requirements
+======================================================================
+
+CURRENT:
+- html lang=th
+- Skip Link ไป #main-content
+- Semantic heading และ landmark
+- Accessible Mobile Dialog
+- FAQ aria-expanded/aria-controls
+- Form field error ใช้ aria-invalid และ aria-describedby
+- Success ใช้ role=status และ aria-live=polite
+- Error Summary ใช้ role=alert และ aria-live=assertive
+- Keyboard Focus Style
+- Reduced Motion
+
+REQUIRED:
+- Lighthouse Accessibility >= 0.90
+- ทดสอบ Keyboard-only ทุก Route
+- ทดสอบ Screen Reader อย่างน้อย VoiceOver/NVDA ตาม Platform
+- ตรวจ Heading Hierarchy
+- ตรวจ Color Contrast AA
+- Label ทุก Input
+- Focus ไม่ถูกซ่อนหลัง Sticky Header
+- Touch Target อย่างน้อยประมาณ 44x44 CSS Pixel
+- Modal/Drawer ต้องไม่ให้ Background Focusable
+- Error Message ต้องบอกวิธีแก้ ไม่ใช้สีอย่างเดียว
+- Upload และ Configurator ใน P2 ต้องเข้าถึงด้วย Keyboard
+
+======================================================================
+14. Environment Configuration
+======================================================================
+
+ใช้ Environment Template ต่อไปนี้เป็น Baseline:
+
+```dotenv
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_NAME=GiftPro Asia
+NEXT_PUBLIC_SITE_DESCRIPTION=รับผลิต Gift Set ของขวัญพรีเมียม สกรีนโลโก้ สำหรับลูกค้าองค์กร
+NEXT_PUBLIC_SITE_PHONE_DISPLAY=02-000-0000
+NEXT_PUBLIC_SITE_PHONE_HREF=tel:+6620000000
+NEXT_PUBLIC_SITE_EMAIL=sales@example.com
+NEXT_PUBLIC_LINE_ID=@giftproasia
+NEXT_PUBLIC_LINE_URL=https://line.me/R/ti/p/@giftproasia
+NEXT_PUBLIC_ALLOW_INDEXING=false
+LEGAL_CONTENT_APPROVED=false
+REAL_ASSETS_APPROVED=false
+RUNTIME_SECRETS_APPROVED=false
+
+SITE_LEGAL_NAME=
+SITE_TAX_ID=
+SITE_ENABLE_LOCAL_BUSINESS_SCHEMA=false
+SITE_BUSINESS_TYPE=ProfessionalService
+SITE_STREET_ADDRESS=
+SITE_ADDRESS_LOCALITY=
+SITE_ADDRESS_REGION=
+SITE_POSTAL_CODE=
+SITE_COUNTRY_CODE=TH
+SITE_LATITUDE=
+SITE_LONGITUDE=
+SITE_OPENING_HOURS=Mo-Sa 08:30-17:30
+
+CMS_MODE=mock
+STRAPI_URL=http://localhost:1337
+STRAPI_API_TOKEN=
+STRAPI_PUBLIC_READ=false
+STRAPI_FALLBACK_TO_MOCK=false
+STRAPI_FETCH_TIMEOUT_MS=8000
+NEXT_IMAGE_REMOTE_URLS=
+
+REVALIDATE_SECRET=
+
+LEAD_STORAGE_MODE=sqlite
+SQLITE_PATH=.data/leads.sqlite
+ALLOW_FILE_LEAD_STORAGE=false
+LEAD_DATA_DIR=.data
+IP_HASH_SECRET=replace-with-at-least-32-random-characters
+QUOTE_RATE_LIMIT_MAX=5
+QUOTE_RATE_LIMIT_WINDOW_MINUTES=15
+
+QUOTE_WEBHOOK_URL=
+QUOTE_WEBHOOK_SECRET=
+QUOTE_WEBHOOK_TIMEOUT_MS=8000
+QUOTE_WEBHOOK_MAX_ATTEMPTS=6
+QUOTE_WEBHOOK_RETRY_BASE_SECONDS=60
+QUOTE_RETRY_BATCH_SIZE=25
+CRON_SECRET=
+
+RUNTIME_STRICT=false
+RUN_DB_MIGRATIONS=false
+```
+
+14.1 Environment Rules
+
+- NEXT_PUBLIC_* ถูกฝังใน Client/Build ตามธรรมชาติของ Next.js
+- ห้ามใส่ Secret ใน NEXT_PUBLIC_*
+- Build-time Data เช่น Canonical, Metadata, Remote Images และ Static Seed ต้องส่งเป็น Build Arguments ใน Docker
+- Runtime Secret ต้องส่งตอน docker run, Secret Manager หรือ Deployment Platform
+- STRAPI_BUILD_API_TOKEN ใช้เฉพาะ Builder Stage
+- Runtime ใช้ STRAPI_API_TOKEN
+- Development, Staging, Production ต้องใช้ Secret คนละชุด
+
+14.2 Build Indexing Guard
+
+เมื่อ NEXT_PUBLIC_ALLOW_INDEXING=true ระบบต้องปฏิเสธ Build หาก:
+
+- Site URL ไม่ใช่ HTTPS จริง
+- Site URL ยังเป็น localhost หรือ example domain
+- Site Name ยังเป็น GiftPro Asia Demo
+- Phone ยังเป็น 000
+- Email ยังเป็น example.com
+- tel URI ไม่ถูกต้อง
+- LINE ID/URL ยังเป็น Demo
+- SITE_LEGAL_NAME ว่าง
+- CMS_MODE ไม่ใช่ strapi
+- STRAPI_URL ไม่ใช่ HTTPS จริง
+- ไม่มี Token และไม่ได้เปิด Public Read
+- เปิด STRAPI_FALLBACK_TO_MOCK
+- Secret เป็น Placeholder
+- RUNTIME_SECRETS_APPROVED ไม่เป็น true
+- LEGAL_CONTENT_APPROVED ไม่เป็น true
+- REAL_ASSETS_APPROVED ไม่เป็น true
+- เปิด LocalBusiness แต่ Address Required Fields ไม่ครบ
+
+14.3 Runtime Guard
+
+เมื่อ RUNTIME_STRICT=true หรือเปิด Indexing:
+
+- CMS_MODE ต้องถูกต้อง
+- LEAD_STORAGE_MODE ต้องเป็น sqlite หรือ file
+- ห้าม file storage ใน Strict Mode หากไม่ได้ Allow โดยชัดเจน
+- IP_HASH_SECRET ต้องยาวอย่างน้อย 32 ตัวและไม่เป็น Placeholder
+- Strapi Strict Mode ต้องใช้ HTTPS
+- ต้องมี API Token เว้นแต่ Public Read
+- REVALIDATE_SECRET ต้องยาวอย่างน้อย 32 ตัว
+- หากเปิด Quote Webhook ต้องเป็น HTTPS
+- QUOTE_WEBHOOK_SECRET ต้องยาวอย่างน้อย 32 ตัว
+- CRON_SECRET ต้องยาวอย่างน้อย 32 ตัว
+
+======================================================================
+15. Site Configuration
+======================================================================
+
+lib/site.ts เป็นแหล่งรวมค่า:
+
+- url
+- name
+- legalName
+- description
+- phoneDisplay
+- phoneHref
+- email
+- lineId
+- lineUrl
+- allowIndexing
+- taxId
+- localBusiness.enabled
+- localBusiness.type
+- streetAddress
+- locality
+- region
+- postalCode
+- countryCode
+- latitude
+- longitude
+- openingHours
+
+Valid LocalBusiness Types ปัจจุบัน:
+- LocalBusiness
+- ProfessionalService
+- Store
+- WholesaleStore
+
+Invalid Phone/Email/URL จะถูกแทนด้วยค่า Fallback ใน Site Config แต่ Production Build Guard ต้องป้องกันไม่ให้ Fallback ถูกเผยแพร่
+
+======================================================================
+16. Demo Data ปัจจุบัน
+======================================================================
+
+ข้อมูลทั้งหมดใน lib/data.ts เป็น Demo และต้องเปลี่ยนก่อนเปิด Indexing
+
+16.1 Categories
+
+1. Gift Set เพื่อสิ่งแวดล้อม
+   slug: eco-giftset
+   เนื้อหา: วัสดุรีไซเคิล วัสดุธรรมชาติ สมุดรีไซเคิล หลอดไม้ไผ่ ถุงผ้า
+
+2. ชุดของขวัญทริปบริษัท ทีมบิลดิ้ง
+   slug: team-building-set
+   เนื้อหา: เสื้อ หมวก กระเป๋า กระบอกน้ำ และธีมงาน
+
+3. ชุดแก้วสแตนเลสเก็บอุณหภูมิ
+   slug: tumbler-set
+   เนื้อหา: แก้ว สมุด ปากกา กล่องจั่วปัง
+
+4. Gift Set อุปกรณ์ไอที
+   slug: it-set
+   เนื้อหา: Powerbank สายชาร์จ และอุปกรณ์พกพา
+
+16.2 Products
+
+1. เซ็ตกระบอกน้ำสแตนเลส + สมุด + ปากกา
+   slug: tumbler-notebook-pen-set
+   category: tumbler-set
+   material: สแตนเลส 304 / หนัง PU / กระดาษจั่วปัง
+   minOrder: 30
+   priceMin: 350
+   priceMax: 590
+   currency: THB
+
+2. เซ็ตรักษ์โลก ถุงผ้า + หลอดไม้ไผ่ + สมุดรีไซเคิล
+   slug: eco-tote-bamboo-set
+   category: eco-giftset
+   material: ผ้าดิบ / ไม้ไผ่ / กระดาษรีไซเคิล
+   minOrder: 50
+   priceMin: 180
+   priceMax: 320
+   currency: THB
+
+3. เซ็ตไอที Powerbank + สายชาร์จ 3-in-1
+   slug: it-powerbank-set
+   category: it-set
+   material: ABS / อะลูมิเนียม
+   minOrder: 50
+   priceMin: 420
+   priceMax: 690
+   currency: THB
+
+16.3 FAQ
+
+- สั่งผลิต Gift Set ขั้นต่ำกี่ชุด
+- ใช้เวลาผลิตนานเท่าไหร่
+- ขอดูตัวอย่างสินค้าก่อนสั่งได้ไหม
+- ออกใบกำกับภาษีได้หรือไม่
+
+16.4 Portfolio
+
+- employee-welcome-kit
+- new-year-partner-gift
+- esg-event-kit
+
+ทุก Portfolio ใช้ชื่อลูกค้าแบบตัวอย่างและรูป Placeholder
+
+16.5 Article
+
+- premium-products-guide
+- หัวข้อเกี่ยวกับสินค้าพรีเมียมและหลักการเลือกให้เหมาะกับองค์กร
+
+16.6 Client Segments
+
+- กลุ่มธุรกิจการเงิน
+- ธุรกิจประกันภัย
+- โรงพยาบาลและสุขภาพ
+- สถาบันการศึกษา
+- หน่วยงานภาครัฐ
+- บริษัทเทคโนโลยี
+
+======================================================================
+17. Strapi Content Model
+======================================================================
+
+17.1 Product
+
+Collection: products
+Draft and Publish: enabled
+Fields:
+
+- name: string, required
+- slug: uid target name, required
+- description: richtext, required
+- material: string
+- minOrder: integer, default 30, min 1
+- priceRange: string
+- images: media multiple, images only, required
+- category: manyToOne -> gift-set-category
+- seo: shared.seo component, required
+- priceMin: decimal, min 0
+- priceMax: decimal, min 0
+- currency: enum THB, default THB
+
+17.2 Gift Set Category
+
+Collection: gift_set_categories
+Draft and Publish: enabled
+Fields:
+
+- name: string, required
+- slug: uid target name, required
+- description: text, required
+- heroImage: media single
+- products: oneToMany mappedBy category
+- seo: shared.seo, required
+
+17.3 Article
+
+Collection: articles
+Draft and Publish: enabled
+Fields:
+
+- title: string, required
+- slug: uid target title, required
+- excerpt: text, required, max 200
+- body: richtext, required
+- cover: media single
+- author: string, required
+- seo: shared.seo, required
+- publishedAt และ updatedAt มาจาก Strapi
+
+17.4 FAQ
+
+Collection: faqs
+Draft and Publish: enabled
+Fields:
+
+- question: string, required
+- answer: text, required
+- order: integer, default 0
+
+17.5 Portfolio
+
+Collection: portfolios
+Draft and Publish: enabled
+Fields:
+
+- title: string, required
+- slug: uid target title, required
+- client: string, required
+- industry: string
+- summary: text, required
+- image: media single, required
+- services: json
+- quantity: integer, min 1
+- completedAt: date
+- featured: boolean, default false
+
+17.6 Shared SEO Component
+
+- seoTitle: string, required, max 60
+- metaDescription: text, required, min 120, max 160
+- canonicalPath: string, required, ต้องเริ่มด้วย /
+- ogImage: media single
+- noIndex: boolean, default false
+
+17.7 Publication Workflow
+
+Draft
+  -> Content Review
+  -> SEO Review
+  -> Legal/Permission Review เมื่อเกี่ยวข้อง
+  -> Approved
+  -> Publish
+
+Product Publish Gate:
+- Category ถูกต้อง
+- มีรูปอย่างน้อย 1 รูป
+- MOQ
+- ราคาเป็นช่วงหรือข้อความสอบถามราคา
+- SEO ครบ
+- Canonical ไม่ซ้ำ
+- ไม่มีข้อมูลที่ยังไม่ยืนยัน
+
+Portfolio Publish Gate:
+- มีหลักฐานสิทธิใช้ชื่อ รูป โลโก้ และ Testimonial
+- ไม่เปิดเผยข้อมูลลูกค้าเกินขอบเขต
+- ถ้าไม่ได้รับอนุญาตให้ Anonymous
+
+======================================================================
+18. Strapi Data Adapter
+======================================================================
+
+CURRENT Adapter Requirements:
+
+- รองรับ Strapi v5 Flattened Entity
+- รองรับ Strapi v4 { id, attributes }
+- รองรับ Wrapper { data: ... }
+- Slug Pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+- Slug สูงสุด 160 ตัวอักษร
+- Canonical ต้องเป็น Internal Path
+- Canonical ไม่มี Query String
+- Canonical สูงสุด 500 ตัวอักษร
+- SEO Title 1–60 ตัวอักษร
+- Meta Description 120–160 ตัวอักษร
+- minOrder เป็น Integer บวก สูงสุด 1,000,000
+- Currency ปัจจุบันรองรับ THB
+- priceMax ห้ามน้อยกว่า priceMin
+- Product ต้องมี Category ที่อ่าน Slug ได้
+- Product ต้องมี Valid Image อย่างน้อย 1 รูป
+- Category ต้องมี Valid Hero Image
+- Article ต้องมี Valid Cover
+- Portfolio ต้องมี Valid Image
+- Description, Excerpt, Summary และข้อความทั่วไปต้องถูกแปลงเป็น Safe Plain Text
+- Article Body ถูกส่งต่อให้ Safe Block Renderer ไม่ Render Raw HTML
+
+Media Security:
+- Relative URL เช่น /uploads/file.jpg ต้องประกอบกับ STRAPI_URL
+- Absolute URL ต้องอยู่ใน Origin Allowlist
+- Allowlist มาจาก STRAPI_URL และ NEXT_IMAGE_REMOTE_URLS
+- ปฏิเสธ javascript:, data URL ที่ไม่อนุญาต และ Host ภายนอก
+
+Collection Behavior:
+- Invalid Record ให้ Log ฝั่ง Server และ Skip Record
+- ถ้า Input มี Record แต่ทุก Record ไม่ผ่าน Validation ให้ Throw Error
+- Production ห้ามเปิด FALLBACK_TO_MOCK
+
+Pagination:
+- PAGE_SIZE = 100
+- MAX_PAGES = 25
+- รองรับสูงสุด 2,500 Records ต่อ Collection Request
+- หากเกิน 25 หน้าให้ Throw Error ไม่ Silent Truncate
+
+Fetch Timeout:
+- Default 8,000 ms
+
+Cache Durations:
+- Categories 3,600 sec
+- Product 300 sec
+- Articles 3,600 sec
+- FAQ 86,400 sec
+- Portfolio 3,600 sec
+
+Cache Tags:
+- categories
+- category:{slug}
+- products
+- product:{slug}
+- articles
+- article:{slug}
+- faqs
+- portfolios
+
+======================================================================
+19. SEO, GEO และ Structured Data
+======================================================================
+
+19.1 Root Metadata
+
+- metadataBase จาก Site URL
+- Default Title + Title Template
+- Site Description
+- Open Graph locale th_TH
+- Default OG Image 1200x630
+- Twitter summary_large_image
+- Global Robots อ้างอิง allowIndexing
+
+19.2 Dynamic Metadata
+
+metadataFromSeo ต้องใช้:
+- seoTitle
+- metaDescription
+- canonicalPath
+- noIndex
+- ogImage หรือ Fallback Image
+- OpenGraph type website/article
+
+Global allowIndexing=false ต้อง Override ทุก Record ให้ noindex
+
+19.3 Canonical
+
+- ทุกหน้าต้องมี Canonical
+- Query Parameters เช่น utm_source, gclid, gbraid ห้ามกลายเป็น Canonical
+- CMS canonicalPath ต้องเป็น Internal Path
+- Redirect Registry ต้องรองรับ URL เดิมเมื่อ Migration
+
+19.4 Structured Data
+
+Organization:
+- name
+- legalName
+- URL
+- logo
+- image
+- description
+- taxID
+- sameAs LINE URL
+- contactPoint
+
+LocalBusiness:
+- Render เฉพาะเมื่อ enabled และ Address Required ครบ
+- type ตาม Allowlist
+- @id
+- name/legalName
+- telephone/email
+- priceRange
+- openingHours
+- PostalAddress
+- GeoCoordinates เมื่อ Latitude/Longitude เป็นตัวเลข
+
+Product:
+- name
+- description
+- images
+- sku = slug
+- brand
+- AggregateOffer
+- lowPrice
+- highPrice
+- priceCurrency THB
+- URL
+
+FAQPage:
+- Question
+- acceptedAnswer
+
+BreadcrumbList:
+- Position
+- Name
+- Absolute URL
+
+BlogPosting:
+- headline
+- description
+- image
+- datePublished
+- dateModified
+- author
+- publisher
+- mainEntityOfPage
+
+JSON-LD Safety:
+- JSON.stringify
+- Escape < เป็น \\u003c
+- Escape Unicode Line Separator
+- ห้ามนำ Raw User Input ใส่โดยไม่ Validation
+
+19.5 Sitemap
+
+Static Entries:
+- /
+- /premium-giftset
+- /products
+- /customize-gift-set
+- /portfolio
+- /blog
+- /contact
+- /privacy
+- /terms
+
+Dynamic Entries:
+- /giftset/{category.slug}
+- /products/{product.slug}
+- /blog/{article.slug}
+
+ใช้ updatedAt/publishedAt เป็น lastModified เมื่อมี
+
+19.6 Robots
+
+เมื่อ noindex:
+- Disallow /
+- ยังระบุ Sitemap
+
+เมื่อเปิด Indexing:
+- Allow /
+- Disallow /api/
+- ระบุ Sitemap
+- ระบุ Host
+
+19.7 GEO Content Rules
+
+- Value Proposition และคำตอบหลักอยู่ใน 100 คำแรก
+- ใช้ Semantic HTML
+- Heading เป็นคำถามหรือหัวข้อชัดเจน
+- ตอบตรง 1 ประโยคก่อนลงรายละเอียด
+- ใช้ข้อมูลจริง ตัวเลขจริง และหลักฐานที่ตรวจสอบได้
+- ห้ามสร้าง Testimonial, Client Logo หรือ Claim ที่ไม่มีหลักฐาน
+- FAQ ต้องตรงกับ Content ที่ผู้ใช้เห็น
+
+19.8 Performance Targets
+
+- Lighthouse Performance >= 0.90
+- SEO >= 0.90
+- Accessibility >= 0.90
+- Best Practices >= 0.90 เป็น Warning Gate ปัจจุบัน แต่ Production ควรยกระดับเป็น Error Gate
+- LCP Target < 2.5 sec
+- INP Target < 200 ms
+- CLS Target < 0.1
+
+======================================================================
+20. RFQ Form Data Contract
+======================================================================
+
+Required Fields:
+- name
+- company
+- email
+- phone
+- quantity
+- consent
+
+Optional Fields:
+- budgetPerSet
+- neededDate
+- province
+- productInterest
+- productSlug
+- decorationMethod
+- detail
+- landingPath
+- referrer
+- utmSource
+- utmMedium
+- utmCampaign
+- utmTerm
+- utmContent
+
+Anti-bot Internal Fields:
+- website: Honeypot
+- startedAt: Millisecond Timestamp
+
+Decoration Method Enum:
+- screen-print
+- uv-print
+- laser
+- embroidery
+- not-sure
+
+Validation:
+
+name:
+- 2–100 characters
+
+company:
+- 2–160 characters
+
+email:
+- valid email
+- max 254
+
+phone:
+- 8–20 characters
+- อนุญาตตัวเลข + ( ) - และช่องว่าง
+
+quantity:
+- integer
+- min 1
+- max 1,000,000
+
+budgetPerSet:
+- optional
+- positive number
+- max 10,000,000
+
+neededDate:
+- optional
+- YYYY-MM-DD
+- ต้องเป็นวันที่จริง
+- ต้องไม่เป็นอดีตตาม Asia/Bangkok
+
+province:
+- max 100
+
+productInterest:
+- max 200
+
+productSlug:
+- max 160
+- empty หรือ slug pattern เท่านั้น
+
+detail:
+- max 2,000
+
+Attribution:
+- landingPath max 500
+- referrer max 1,000
+- UTM Source/Medium max 200
+- UTM Campaign/Term/Content max 300
+
+Input Cleaning:
+- ลบ Control Character
+- Normalize Whitespace
+- Trim
+
+Form UX:
+- เก็บค่าที่กรอกเมื่อ Validation Error
+- แสดง Error ต่อ Field
+- แสดง Global Error
+- ปิด Submit จน startedAt ถูกตั้ง
+- เมื่อ Success แสดง Request ID
+- แจ้งว่าไม่มีการชำระเงินผ่านฟอร์ม
+
+======================================================================
+21. RFQ Workflow
+======================================================================
+
+ขั้นตอนปัจจุบัน:
+
+1. User เปิด Form
+2. Client เก็บ startedAt
+3. Client เก็บ Landing Path, Referrer และ UTM
+4. User Submit
+5. Server Action parse FormData
+6. ถ้า Honeypot มีค่า ให้คืน Neutral Success และไม่บันทึก
+7. ถ้า Validation ไม่ผ่าน คืน Field Errors
+8. ตรวจ Form Time
+   - ต่ำกว่า 1,200 ms ปฏิเสธ
+   - มากกว่า 24 ชั่วโมงปฏิเสธ
+9. อ่าน Client IP ตามลำดับ:
+   - cf-connecting-ip
+   - x-real-ip
+   - first x-forwarded-for
+   - unknown
+10. Hash IP ด้วย HMAC-SHA256
+11. Atomic Rate Limit
+12. สร้าง Request ID
+13. Persist Lead ก่อนส่ง Webhook
+14. เรียก Webhook แบบ Await เพื่อไม่ให้ Serverless ตัดงานก่อนจบ
+15. Webhook สำเร็จ -> sent
+16. Webhook ไม่สำเร็จ -> failed หรือ dead พร้อม next retry
+17. ไม่มี Webhook URL -> skipped
+18. คืน Request ID ให้ User แม้ไม่มี Webhook หาก Persist สำเร็จ
+
+Request ID Format:
+
+RFQ-YYYYMMDD-XXXXXXXXXXXX
+
+- Date ใช้ Asia/Bangkok
+- Suffix เป็น Random 6 bytes แปลง Hex ตัวใหญ่ 12 ตัว
+
+Default Rate Limit:
+- 5 Requests
+- ต่อ 15 นาที
+- ต่อ IP Hash Bucket
+
+Production Proxy Requirement:
+- Reverse Proxy ต้อง Overwrite CF-Connecting-IP, X-Real-IP และ X-Forwarded-For
+- ห้ามเปิด Container ตรงสู่อินเทอร์เน็ต
+- มิฉะนั้น Client สามารถ Spoof Header และหลบ Rate Limit ได้
+
+======================================================================
+22. RFQ Database Schema
+======================================================================
+
+SQLite File Default:
+- .data/leads.sqlite
+
+PRAGMA:
+- journal_mode = WAL
+- foreign_keys = ON
+- busy_timeout = 5000
+
+Table: quote_requests
+
+Columns:
+1. id INTEGER PRIMARY KEY AUTOINCREMENT
+2. request_id TEXT NOT NULL UNIQUE
+3. submitted_at TEXT NOT NULL
+4. name TEXT NOT NULL
+5. company TEXT NOT NULL
+6. email TEXT NOT NULL
+7. phone TEXT NOT NULL
+8. quantity INTEGER NOT NULL CHECK > 0
+9. budget_per_set REAL
+10. needed_date TEXT
+11. province TEXT
+12. product_interest TEXT
+13. product_slug TEXT
+14. decoration_method TEXT NOT NULL
+15. detail TEXT
+16. consent_at TEXT NOT NULL
+17. landing_path TEXT
+18. referrer TEXT
+19. utm_source TEXT
+20. utm_medium TEXT
+21. utm_campaign TEXT
+22. utm_term TEXT
+23. utm_content TEXT
+24. ip_hash TEXT NOT NULL
+25. user_agent TEXT
+26. lead_status TEXT NOT NULL DEFAULT new
+27. webhook_status TEXT NOT NULL DEFAULT pending
+28. webhook_attempt_count INTEGER NOT NULL DEFAULT 0
+29. webhook_error TEXT
+30. webhook_delivered_at TEXT
+31. webhook_last_attempt_at TEXT
+32. webhook_next_attempt_at TEXT
+33. raw_payload TEXT NOT NULL
+34. created_at TEXT NOT NULL
+35. updated_at TEXT NOT NULL
+
+Indexes:
+- created_at DESC
+- lead_status + created_at DESC
+- company
+- webhook_status + webhook_next_attempt_at + webhook_attempt_count
+
+Table: quote_rate_limits
+
+- key_hash TEXT
+- bucket_start INTEGER
+- attempt_count INTEGER DEFAULT 1
+- updated_at INTEGER
+- Composite Primary Key: key_hash + bucket_start
+
+Index:
+- updated_at
+
+Lead Status ปัจจุบันเริ่ม new แต่ยังไม่มี UI จัดการสถานะ
+
+Webhook Status:
+- pending
+- processing
+- sent
+- failed
+- dead
+- skipped
+
+SQLite Boundary:
+- เหมาะกับ Single ECS หรือ Single Container
+- ต้อง Mount Persistent Volume
+- ไม่ควร Share SQLite บน Network Filesystem ที่ไม่รองรับ Lock
+- เริ่ม WEB_CONCURRENCY=1
+- ก่อนเพิ่ม Worker ต้อง Load Test Lock/Latency
+- Multi-instance ต้องย้ายไป RDS และ Shared Rate Limit Store
+
+======================================================================
+23. Webhook Outbox และ Retry
+======================================================================
+
+Outbound Event:
+
+```json
+{
+  "event": "quote.requested",
+  "requestId": "RFQ-20260903-ABCDEF123456",
+  "submittedAt": "2026-09-03T10:00:00.000Z",
+  "attempt": 1,
+  "lead": {
+    "name": "...",
+    "company": "...",
+    "email": "...",
+    "phone": "...",
+    "quantity": 100,
+    "budgetPerSet": 500,
+    "neededDate": "2026-10-01",
+    "province": "กรุงเทพมหานคร",
+    "productInterest": "Welcome Kit",
+    "productSlug": "welcome-kit",
+    "decorationMethod": "uv-print",
+    "detail": "...",
+    "landingPath": "/premium-giftset?utm_source=google",
+    "referrer": "...",
+    "utmSource": "google",
+    "utmMedium": "cpc",
+    "utmCampaign": "...",
+    "utmTerm": "...",
+    "utmContent": "...",
+    "consent": true
+  }
+}
+```
+
+Headers:
+- Content-Type: application/json
+- Idempotency-Key: requestId
+- Authorization: Bearer {QUOTE_WEBHOOK_SECRET} เมื่อมี Secret
+
+Timeout:
+- Default 8,000 ms
+
+Retry:
+- Default max 6 attempts
+- Base 60 seconds
+- Exponential Backoff
+- Cap 21,600 seconds หรือ 6 ชั่วโมง
+- Initial Retry Time ตอน Persist ปัจจุบันตั้งประมาณ 60 วินาที
+
+Retry Worker:
+- POST /api/jobs/retry-quotes
+- Authorization Bearer CRON_SECRET
+- Batch default 25
+- Min 1, Max 100
+- Claim ด้วย BEGIN IMMEDIATE Transaction
+- รองรับ Stale Processing Lock 15 นาที
+- Invalid raw_payload เปลี่ยนเป็น dead
+- Downstream ต้องรองรับ Idempotency-Key เพื่อป้องกัน Lead ซ้ำ
+
+Scheduler:
+- เรียกทุก 1–5 นาทีตาม Volume
+- เรียกจาก Private/Approved Runner
+- ใช้ Secret แยกจาก Revalidate Secret
+
+REQUIRED FUTURE:
+- Dead-letter Dashboard
+- Manual Retry
+- Alert เมื่อ dead > threshold
+- Delivery Metrics
+- Audit Log
+- Outbox Cleanup/Retention
+
+======================================================================
+24. API Contracts ปัจจุบัน
+======================================================================
+
+24.1 GET /api/health
+
+Response:
+
+```json
+{
+  "status": "ok",
+  "service": "premium-giftset-web",
+  "storage": "sqlite",
+  "database": "not-checked",
+  "timestamp": "ISO-8601"
+}
+```
+
+24.2 GET /api/health?deep=1
+
+- ตรวจ Database SELECT 1
+- 200 เมื่อปกติ
+- 503 และ status=degraded เมื่อ Database Error
+- Cache-Control: no-store
+
+24.3 POST /api/revalidate
+
+Security:
+- Bearer REVALIDATE_SECRET
+- Secret >= 32 characters
+- timingSafeEqual
+- Payload max 65,536 bytes
+- JSON Validation ด้วย Zod
+- ไม่รับ arbitrary path
+
+Supported Model:
+- product
+- gift-set-category
+- article
+- faq
+- portfolio
+
+Product Targets:
+- Paths: /, /products, /sitemap.xml, /products/{slug}, /giftset/{category}
+- Tags: products, product:{slug}, category:{category}
+
+Category Targets:
+- Paths: /, /premium-giftset, /sitemap.xml, /giftset/{slug}
+- Tags: categories, category:{slug}
+
+Article Targets:
+- Paths: /blog, /sitemap.xml, /blog/{slug}
+- Tags: articles, article:{slug}
+
+FAQ Targets:
+- Path: /premium-giftset
+- Tag: faqs
+
+Portfolio Targets:
+- Path: /portfolio
+- Tag: portfolios
+
+Status Codes:
+- 503: not configured
+- 401: unauthorized
+- 413: payload too large
+- 400: invalid JSON, invalid payload, unsupported model
+- 200: revalidated
+
+Example:
+
+```bash
+curl -X POST https://www.example.com/api/revalidate \
+  -H 'Authorization: Bearer <REVALIDATE_SECRET>' \
+  -H 'Content-Type: application/json' \
+  -d '{"event":"entry.update","model":"product","entry":{"slug":"tumbler-notebook-pen-set"}}'
+```
+
+24.4 POST /api/jobs/retry-quotes
+
+Security:
+- Bearer CRON_SECRET
+- timingSafeEqual
+
+Response Fields:
+- ok
+- processed
+- sent
+- failed
+- dead
+- results
+- processedAt
+
+24.5 Quote Submission
+
+CURRENT ใช้ Server Action ไม่ใช่ Public REST API
+หากสร้าง External API ในอนาคตต้อง:
+- OpenAPI 3.1
+- Authentication หรือ Anti-abuse
+- Idempotency-Key
+- Request/Response Schema
+- Rate Limit
+- Audit Log
+- Versioned path เช่น /api/v1/rfqs
+
+======================================================================
+25. Security Baseline
+======================================================================
+
+25.1 Security Headers
+
+- Content-Security-Policy
+- Referrer-Policy: strict-origin-when-cross-origin
+- X-Content-Type-Options: nosniff
+- X-Frame-Options: DENY
+- X-DNS-Prefetch-Control: off
+- X-Permitted-Cross-Domain-Policies: none
+- Cross-Origin-Opener-Policy: same-origin
+- Permissions-Policy ปิด camera, microphone, geolocation, payment, usb, browsing-topics
+- Strict-Transport-Security เมื่อ NODE_ENV=production และ Site URL เป็น HTTPS
+- poweredByHeader=false
+
+25.2 CSP Current
+
+- default-src self
+- base-uri self
+- form-action self
+- frame-ancestors none
+- object-src none
+- script-src self unsafe-inline และ unsafe-eval เฉพาะ Development
+- style-src self unsafe-inline
+- img-src self data blob + configured media origins
+- font-src self data
+- connect-src self + Strapi origin + ws/wss เฉพาะ Development
+- media-src self
+- worker-src self blob
+- manifest-src self
+- upgrade-insecure-requests ใน Secure Production
+
+REQUIRED HARDENING:
+- เปลี่ยนเป็น nonce-based CSP
+- ตรวจ Third-party Script ทุกตัว
+- หลีกเลี่ยง unsafe-inline เมื่อทำได้
+- ห้ามเพิ่ม Wildcard Origin โดยไม่มีเหตุผล
+
+25.3 Input and Content Security
+
+- Zod Server Validation
+- Control Character Removal
+- CMS Media Origin Allowlist
+- No Raw CMS HTML Injection
+- JSON-LD Escaping
+- Slug/Canonical Validation
+- Webhook Payload Size Limit
+- Secret Comparison แบบ timing-safe
+- IP เป็น HMAC Hash ไม่เก็บค่า Raw
+
+25.4 Secret Management
+
+Secret ที่ห้ามอยู่ใน Git:
+- STRAPI_API_TOKEN
+- REVALIDATE_SECRET
+- IP_HASH_SECRET
+- QUOTE_WEBHOOK_SECRET
+- CRON_SECRET
+
+ใช้:
+- GitLab Protected and Masked Variables
+- Secret Manager ของ Cloud
+- Separate Secret ต่อ Environment
+- Rotation หลัง Staff/Vendor Access เปลี่ยน
+
+25.5 Lead Data
+
+SQLite มี PII:
+- Name
+- Company
+- Email
+- Phone
+- Project Detail
+- Attribution
+
+REQUIRED:
+- Encrypted Persistent Volume
+- Filesystem Permission จำกัด
+- Backup Encryption
+- Retention Schedule
+- Deletion Workflow
+- Data Subject Request Workflow
+- Access Log
+- Least Privilege
+
+25.6 Threats และ Control
+
+Spam/Bot:
+- Honeypot
+- Form Time
+- Rate Limit
+- REQUIRED: CAPTCHA แบบ Risk-based เมื่อ Attack สูง
+
+XSS from CMS:
+- Safe Block Model
+- Plain Text Conversion
+
+Unauthorized Revalidation:
+- Bearer Secret
+- Allowlisted Model/Path
+- Payload Limit
+
+Webhook Duplicate:
+- Idempotency-Key
+- Transactional Status
+
+Lead Loss:
+- Persist First
+- Outbox Retry
+
+IP Spoofing:
+- Trusted Reverse Proxy Requirement
+
+Demo Data Indexing:
+- noindex Default
+- Build Guard
+- Environment Banner
+
+Secret Leakage in Image Build:
+- Builder-only Token
+- ไม่ Copy เข้า Runner
+- หลีกเลี่ยง Shared Remote Layer Cache
+
+======================================================================
+26. Safe Article Rendering
+======================================================================
+
+CURRENT Renderer:
+- ลบ HTML Comment
+- ลบ script, style, iframe, object, embed, svg, math รวม Content ภายใน
+- Parse เฉพาะ h2, h3, p, blockquote, li
+- Strip Tag ที่เหลือเป็น Plain Text
+- Decode HTML Entity พื้นฐานและ Numeric Entity
+- Render ผ่าน React Text Node
+- ไม่ใช้ CMS HTML ใน dangerouslySetInnerHTML
+
+Supported Block Types:
+- paragraph
+- heading2
+- heading3
+- blockquote
+- listItem
+
+Limitations:
+- Link ใน Rich Text ไม่ถูก Render เป็น Link
+- Image/Embed ใน Article Body ไม่ถูก Render
+- Nested List ไม่รักษาโครงสร้างเต็ม
+- H4, Table, Code Block ไม่มาจาก Parser แม้ CSS รองรับ
+
+REQUIRED FUTURE:
+- ใช้ Strapi Blocks หรือ Structured Rich Text JSON
+- Allowlist Renderer ต่อ Block Type
+- Link Sanitization
+- Image Component ที่ตรวจ Host
+- Caption
+- Accessible Table
+- Code Block
+- ไม่กลับไปใช้ Raw HTML Injection
+
+======================================================================
+27. LocalBusiness และข้อมูลบริษัท
+======================================================================
+
+LocalBusiness JSON-LD ต้องไม่ Render จนกว่า:
+
+- SITE_ENABLE_LOCAL_BUSINESS_SCHEMA=true
+- SITE_STREET_ADDRESS มีค่า
+- SITE_ADDRESS_LOCALITY มีค่า
+- SITE_POSTAL_CODE มีค่า
+- ข้อมูลทั้งหมดได้รับอนุมัติ
+
+ข้อมูล Production ที่ต้องส่งมอบ:
+
+- Brand Name
+- Legal Company Name ภาษาไทย/อังกฤษ
+- Tax ID
+- Registered Address
+- Operating Address ถ้าต่างกัน
+- Phone Display
+- tel URI แบบ +66
+- Sales Email
+- LINE OA ID/URL
+- Business Hours
+- Latitude/Longitude เมื่อยืนยัน
+- Logo Files
+- OG Image
+- Favicon/App Icons
+- Social Profile URLs
+
+======================================================================
+28. Docker Deployment
+======================================================================
+
+Docker Stages:
+
+1. deps
+   - node:22-alpine
+   - npm ci
+
+2. builder
+   - copy node_modules
+   - copy source
+   - receive Build Arguments
+   - STRAPI_API_TOKEN ถูก Scope ผ่าน STRAPI_BUILD_API_TOKEN เฉพาะ npm run build
+
+3. runner
+   - node:22-alpine
+   - NODE_ENV=production
+   - non-root user nextjs UID 1001
+   - copy public
+   - copy .next/standalone
+   - copy .next/static
+   - copy migration and runtime validator
+   - create /app/.data
+   - Healthcheck ทุก 30 sec
+   - run entrypoint
+
+Entrypoint:
+1. validate:runtime
+2. ถ้า RUN_DB_MIGRATIONS=true ให้ migrate
+3. exec server
+
+Demo Build:
+
+```bash
+docker build -t premium-giftset:v1.1 .
+```
+
+Run:
+
+```bash
+docker run --rm \
+  --env-file .env.production \
+  -e RUNTIME_STRICT=true \
+  -e RUN_DB_MIGRATIONS=true \
+  -v premium-giftset-data:/app/.data \
+  -p 3000:3000 \
+  premium-giftset:v1.1
+```
+
+Health:
+
+```bash
+curl -f http://localhost:3000/api/health
+curl -f 'http://localhost:3000/api/health?deep=1'
+```
+
+Production Requirements:
+- Reverse Proxy
+- TLS
+- Persistent Encrypted Volume
+- Log Collection
+- Resource Limit
+- Restart Policy
+- Backup
+- Secret Injection
+- Health/Readiness Monitoring
+
+======================================================================
+29. PM2 / VM Deployment
+======================================================================
+
+Build:
+
+```bash
+npm ci
+npm run build:standalone
+npm install -g pm2
+export RUNTIME_STRICT=true
+npm run validate:runtime
+npm run db:migrate
+pm2 start ecosystem.config.cjs
+```
+
+PM2 Config:
+- app name premium-giftset-web
+- script .next/standalone/server.js
+- instances from WEB_CONCURRENCY default 1
+- exec_mode cluster
+- autorestart
+- max_memory_restart 750M
+- PORT default 3000
+- HOSTNAME 0.0.0.0
+
+SQLite Warning:
+- เริ่ม instances=1
+- ห้าม Scale Multi-host ด้วย SQLite
+
+======================================================================
+30. GitLab CI/CD
+======================================================================
+
+Stages:
+- quality
+- build
+- audit
+- container
+
+Default CI Mode:
+- CMS_MODE=mock
+- NEXT_PUBLIC_ALLOW_INDEXING=false
+- LEAD_STORAGE_MODE=file สำหรับ Build Pipeline
+- NEXT_TELEMETRY_DISABLED=1
+
+Jobs:
+
+1. lint
+- npm ci
+- npm run lint
+
+2. typecheck
+- npm run typecheck
+
+3. unit-test
+- npm run test
+
+4. build
+- deterministic mock/noindex build
+- artifacts: standalone, static, public, migration, runtime scripts
+- expire 1 day
+
+5. lighthouse
+- build mock/noindex
+- run 3 times
+- routes:
+  - /
+  - /premium-giftset
+  - /products/tumbler-notebook-pen-set
+  - /customize-gift-set
+  - /portfolio
+  - /contact
+- private filesystem artifact
+- expire 7 days
+- allow_failure=false
+
+6. container-image
+- Kaniko
+- push commit SHA tag
+- push latest
+- pass Build Arguments
+- pass Strapi Build Token เมื่อมี
+- run only default branch or tag
+
+REQUIRED CI/CD EXTENSIONS:
+
+- Dependency Vulnerability Scan
+- Secret Scan
+- SAST
+- Container Image Scan
+- SBOM
+- License Check
+- Staging Deployment Job
+- Database Migration Job
+- Post-deploy Smoke Test
+- Manual Production Approval
+- Protected Environment
+- Production Deploy
+- Automated Rollback Trigger
+- Release Tag and Changelog
+- Backup Verification ก่อน Migration เสี่ยงสูง
+
+======================================================================
+31. Test Coverage ปัจจุบัน
+======================================================================
+
+31.1 Quote Schema Tests
+- Complete Request ผ่าน
+- Invalid Email ถูกปฏิเสธ
+- Missing Consent ถูกปฏิเสธ
+- Impossible Date ถูกปฏิเสธ
+- Malformed Product Slug ถูกปฏิเสธ
+
+31.2 Quote Storage Tests
+- Persist ก่อน Webhook
+- Request ID Format
+- skipped เมื่อไม่มี Webhook
+- Atomic Rate Limiter
+- Claim Due Outbox ครั้งเดียว
+
+31.3 Sanitization Tests
+- ลบ Executable Markup
+- รักษา Semantic Block Type ที่รองรับ
+
+31.4 Strapi Adapter Tests
+- Unwrap v4 Attributes
+- Adapt v5 Flattened Product
+- Relative Media URL
+- v4 Relation and Media Wrapper
+- ปฏิเสธ Media Origin ที่ไม่อยู่ Allowlist
+
+REQUIRED TESTS:
+
+Unit:
+- Revalidate Target Mapping
+- Secret Validation
+- Backoff Calculation
+- LocalBusiness Condition
+- Metadata noIndex Behavior
+- Date Boundary Asia/Bangkok
+- Environment Guard
+
+Integration:
+- Quote Submit -> DB -> Webhook State
+- Retry -> sent/failed/dead
+- Concurrent Rate Limit
+- Strapi Pagination
+- Strapi Timeout/Fallback
+- SQLite Migration Idempotency
+
+E2E:
+- Desktop and Mobile Navigation
+- RFQ Success
+- RFQ Validation Error
+- Consent
+- UTM Capture
+- Product prefill
+- noindex Staging
+- 404
+- Keyboard Navigation
+
+Security:
+- Payload Limit
+- Invalid Bearer
+- Header Spoofing behind Proxy Test
+- XSS Payload in CMS
+- Malicious Media URL
+- SQL Injection Inputs
+- Duplicate Webhook
+
+======================================================================
+32. Verification Truth
+======================================================================
+
+Release Verification ระบุว่าผ่านการตรวจโครงสร้างและ Logic หลายส่วน ได้แก่:
+
+- JSON Parse
+- JS/MJS/CJS Syntax
+- POSIX Shell Syntax
+- YAML Parse
+- TypeScript/TSX Syntax Transpilation
+- Strict Type Consistency ด้วย Temporary Stubs
+- Local Import Resolution
+- CSS Brace และ Git Whitespace
+- P0 File Presence
+- package-lock consistency แบบ offline
+- Environment Guard Behavior
+- Runtime Guard Behavior
+- Env Precedence
+- SQLite Migration
+- Mock Data Relations/SEO/Image Existence
+- Image Structure
+- Safe Article Behavior
+- ZIP Integrity และ Manifest
+
+แต่ Runtime ที่สร้าง Release ไม่สามารถติดตั้ง Dependency จาก npm registry ได้ จึงยังไม่มี Authoritative Result สำหรับ:
+
+- npm ci
+- npm run lint
+- npm run typecheck
+- npm run test
+- npm run build
+- npm run lhci
+- docker build
+
+Agent ต้องรันคำสั่งเหล่านี้อีกครั้งใน Environment ที่เชื่อม Registry ได้ และบันทึกผลจริง ห้ามใช้รายงานเดิมแทนผลใหม่
+
+======================================================================
+33. P1 Remaining Work — Production Completion
+======================================================================
+
+33.1 P1-CMS-001: Deploy Strapi Application จริง
+
+Requirements:
+- สร้าง Strapi v5 Project แยก
+- ใช้ PostgreSQL/MySQL ตามมาตรฐานองค์กร
+- แยก Development/Staging/Production
+- นำ Schema Template เข้า Project
+- สร้าง Admin User และ RBAC
+- จำกัด Public Role
+- ใช้ Read-only API Token
+- เปิด Draft and Publish
+- ตั้ง Webhook ไป Next.js
+- Health Check
+- Log and Alert
+- Database Backup
+- Media Backup
+- Restore Test
+- Secret Rotation
+- MFA/SSO หรือ Access Gateway ตามความสามารถ
+
+Acceptance:
+- Editor สร้าง Draft, Preview, Review, Publish ได้
+- Publish แล้วหน้า Next.js Update ผ่าน Revalidate
+- Unpublish แล้ว URL ไม่แสดง Record
+- Token ไม่มี Create/Update/Delete Permission
+- Backup และ Restore ผ่าน
+
+33.2 P1-MEDIA-001: Huawei OBS/CDN
+
+Requirements:
+- Strapi Upload Provider สำหรับ OBS หรือ S3-compatible Gateway ที่อนุมัติ
+- Private Upload Policy
+- Public CDN หรือ Signed Delivery ตามประเภท Asset
+- Image Optimization
+- Allowed Origin
+- Virus/Malware Scan สำหรับไฟล์ Upload ในอนาคต
+- Lifecycle/Retention
+- Backup Strategy
+
+33.3 P1-DATA-001: Real Content Migration
+
+Replace:
+- Brand
+- Company Information
+- Phone/Email/LINE
+- Address
+- Logo
+- OG Images
+- Product Images
+- Product Detail
+- MOQ
+- Price Range
+- Category
+- FAQ
+- Portfolio
+- Client Logo/Testimonial
+- Blog
+
+Acceptance:
+- ไม่มีคำว่า GiftPro Asia, example.com, 000-0000 หรือ “ตัวอย่าง” ใน Public Production Content
+- ทุกภาพมี License/Permission
+- ทุก SEO Title/Description ไม่ซ้ำ
+- Canonical ถูกต้อง
+
+33.4 P1-LEGAL-001: Legal/PDPA Approval
+
+Deliverables:
+- Approved Privacy Notice
+- Terms of Use
+- Cookie Notice หากใช้ Non-essential Cookie
+- Consent Text
+- Retention Schedule
+- DSR Procedure
+- Processor Register
+- Portfolio Permission Procedure
+- Incident Contact
+
+33.5 P1-DATA-002: RDS/Redis Upgrade
+
+Trigger:
+- Multi-instance
+- HA
+- Horizontal Scale
+- Lead Volume สูง
+
+Design:
+- QuoteRepository Interface
+- SQLiteQuoteRepository
+- PostgresQuoteRepository หรือ MySQLQuoteRepository
+- Transactional Outbox
+- Unique request_id
+- Shared Rate Limit ใน Redis
+- Migration Tool
+- Connection Pool
+- Retry and Timeout
+- Health Check
+
+Acceptance:
+- Two instances รับ RFQ พร้อมกันโดยไม่ Duplicate
+- Rate Limit ใช้ร่วมกัน
+- Outbox Claim แบบ SKIP LOCKED หรือเทียบเท่า
+- Migration จาก SQLite ทดสอบแล้ว
+
+33.6 P1-OPS-001: Staging Deployment
+
+Requirements:
+- Staging Domain
+- noindex
+- Access Protection
+- Separate Secrets
+- Separate Database
+- Separate Strapi
+- Test Webhook
+- Monitoring
+- Backup
+
+33.7 P1-UAT-001: UAT
+
+UAT Roles:
+- Marketing
+- Sales
+- Procurement-style user
+- Content Editor
+- Legal/DPO
+- IT/DevOps
+
+Must Test:
+- All Routes
+- Mobile/Desktop
+- Chrome/Safari/Edge/Firefox
+- Quote Flow
+- Error Flow
+- Phone/LINE/Email Links
+- Strapi Publish/Unpublish
+- Revalidate
+- Backup/Restore
+- Webhook Retry
+- SEO/Structured Data
+- Accessibility
+
+======================================================================
+34. P2-1 Quote Basket — Target Design
+======================================================================
+
+Objective:
+ให้ลูกค้าเลือก Product หลายรายการก่อนส่ง RFQ โดยยังไม่เป็น Shopping Cart ที่ชำระเงิน
+
+Features:
+- Add to Quote
+- Remove
+- Change Quantity
+- Add Note ต่อ Item
+- เลือก Decoration Method ต่อ Item
+- เลือก Packaging Preference
+- Save Basket ชั่วคราว
+- Merge Basket เข้า RFQ
+- แสดง Approximate Range พร้อม Disclaimer
+- Generate Basket ID
+- Shareable Basket Link แบบ Token อายุจำกัดเมื่อได้รับอนุมัติ
+
+Data Model Proposal:
+
+QuoteBasket
+- id UUID
+- publicTokenHash
+- status draft/submitted/expired
+- currency THB
+- createdAt
+- updatedAt
+- expiresAt
+- sourceSession
+
+QuoteBasketItem
+- id
+- basketId
+- productId/productSlug
+- variantId optional
+- quantity
+- decorationMethod
+- packagingOption
+- note
+- estimatedUnitMin
+- estimatedUnitMax
+- pricingSnapshotVersion
+
+Security:
+- Token ต้องสุ่มและเก็บ Hash
+- ห้ามเดา ID ได้
+- Expiry
+- Rate Limit
+- ไม่เก็บ PII ก่อน Submit เว้นแต่จำเป็น
+
+Acceptance:
+- Basket อยู่หลัง Refresh
+- Product ถูก Unpublish ต้องแจ้ง User
+- ราคาเปลี่ยนต้องแจ้ง Recalculate
+- Submit แล้ว Idempotent
+
+======================================================================
+35. P2-2 Product Configurator — Target Design
+======================================================================
+
+Configuration Dimensions:
+- Product
+- Variant
+- Color
+- Material
+- Capacity/Size
+- Decoration Method
+- Decoration Position
+- Number of Print Colors
+- Logo Size
+- Packaging Type
+- Insert Card
+- Ribbon/Sleeve
+- Individual Name
+- Quantity
+- Delivery Date
+- Delivery Locations
+
+Rule Engine:
+- Method Compatibility ต่อ Material
+- MOQ ต่อ Variant
+- Max Logo Area
+- Lead Time ต่อ Method
+- Packaging Capacity
+- Prohibited Combination
+- Tier Pricing
+
+UX:
+- Step-by-step Wizard
+- Progress Indicator
+- Summary Panel
+- Live Validation
+- Save Draft
+- Mobile-friendly
+- Accessible
+
+Output:
+- Configuration JSON
+- Human-readable Summary
+- Estimated Price Range
+- Lead Time Range
+- Missing Information Flags
+- RFQ Attachment
+
+ห้าม Configurator ยืนยันราคาและวันส่งมอบแบบ Final หากยังไม่ได้รับการยืนยันจาก NextERP/Production
+
+======================================================================
+36. P2-3 Price Tier — Target Design
+======================================================================
+
+Source of Truth:
+- NextERP Pricing Service หรือ Approved Pricing Database
+
+Tier Model Proposal:
+
+ProductPriceTier
+- productId
+- variantId optional
+- minQty
+- maxQty optional
+- baseUnitPrice
+- currency
+- validFrom
+- validTo
+- customerSegment optional
+- priceListId
+- version
+
+Cost Components:
+- Product Cost
+- Decoration Setup
+- Decoration Unit Cost
+- Packaging
+- Insert
+- Proof/Sample
+- Shipping
+- Tax
+- Margin Rule
+
+Business Rules:
+- Tier ต้องไม่ Overlap โดยไม่ตั้ง Priority
+- Effective Date
+- Minimum Margin
+- Manual Override ต้องมี Approval/Audit
+- Website แสดง Estimate
+- Formal Quote สร้างใน NextERP/CRM
+
+Caching:
+- Short TTL
+- Invalidate เมื่อ Price List เปลี่ยน
+- Fallback เป็น “สอบถามราคา” เมื่อ Service ไม่พร้อม
+- ห้ามใช้ราคาเก่าโดยไม่บอก
+
+======================================================================
+37. P2-4 Upload Logo/Artwork และ Online Mockup — Target Design
+======================================================================
+
+Upload Architecture:
+
+Browser
+  -> Request Presigned Upload
+  -> Upload Direct to OBS
+  -> Malware Scan
+  -> Metadata Record
+  -> Designer/Mockup Worker
+  -> Preview
+
+Allowed File Types ต้องได้รับการอนุมัติ:
+- PDF
+- PNG
+- JPG/JPEG
+- AI/EPS ผ่าน Workflow ที่ควบคุม
+- SVG ต้อง Sanitize อย่างเข้มงวดหรือแปลงเป็น Raster ก่อน Preview
+
+Controls:
+- File Size Limit
+- MIME + Magic Byte Validation
+- Filename Normalization
+- Virus Scan
+- Private Bucket
+- Signed URL
+- Expiry
+- Retention
+- Delete on Request
+- Access Audit
+- No Public Guessable URL
+
+Mockup:
+- Template-based Placement
+- Scale/Rotate within Safe Area
+- Product Mask
+- Low-resolution Watermarked Preview
+- Disclaimer ว่าเป็นภาพจำลอง
+- Final Proof ต้องอนุมัติโดยมนุษย์
+
+Data Model:
+- Asset
+- AssetVersion
+- UploadSession
+- MockupJob
+- MockupTemplate
+- ProofApproval
+
+======================================================================
+38. P2-5 NextERP/CRM Integration — Target Design
+======================================================================
+
+Integration Principles:
+- Server-to-server เท่านั้น
+- TLS
+- OAuth2 Client Credentials, mTLS หรือ Signed API ตามมาตรฐานองค์กร
+- Idempotency-Key
+- Correlation ID
+- Retry with Backoff
+- Dead-letter
+- Audit Log
+- PII Minimization
+- Versioned API
+
+Inbound from NextERP:
+- Product Master
+- SKU/Variant
+- Category
+- MOQ
+- Price List/Tier
+- Lead Time
+- Stock/Availability เมื่ออนุญาต
+- Decoration Option
+- Packaging Option
+- Tax Rule
+- Customer Segment
+
+Outbound to NextERP/CRM:
+- RFQ Request
+- Contact/Company
+- Items/Configuration
+- Budget
+- Needed Date
+- Delivery Area
+- Attribution
+- Consent Timestamp
+- Artwork Reference
+- Source Request ID
+
+Status Back to Website/Dashboard:
+- received
+- assigned
+- contacted
+- qualifying
+- quoted
+- sample_requested
+- won
+- lost
+- cancelled
+
+Proposed API:
+
+POST /integration/v1/rfqs
+Headers:
+- Authorization
+- Idempotency-Key = RFQ requestId
+- X-Correlation-ID
+
+Response:
+
+```json
+{
+  "externalRfqId": "ERP-RFQ-...",
+  "status": "received",
+  "receivedAt": "ISO-8601"
+}
+```
+
+Mapping ต้องจัดทำเป็นเอกสาร Field-by-field และไม่ฝัง Mapping กระจัดกระจายใน UI Code
+
+======================================================================
+39. P2-6 LINE OA Messaging API — Target Design
+======================================================================
+
+ห้ามใช้ LINE Notify
+ใช้ LINE Official Account + Messaging API ผ่าน Backend/Middleware
+
+Use Cases:
+- แจ้ง Sales Room เมื่อมี RFQ ใหม่
+- ส่งข้อความยืนยันแก่ลูกค้าเมื่อมี LINE User Consent/Linkage
+- ส่ง Status Update
+- ให้ Sales เปิด Link ไป CRM/RFQ
+- Escalation เมื่อ Webhook Dead
+
+Architecture:
+
+Website
+  -> RFQ Outbox
+  -> Integration Middleware/n8n/Internal Service
+  -> LINE Messaging API
+
+Security:
+- Channel Secret และ Access Token อยู่ Server-side
+- Verify LINE Webhook Signature
+- Do not log full token
+- Rate Limit
+- Template Approval
+- PDPA Consent
+- Opt-out
+
+Message Content:
+- RFQ ID
+- Company
+- Contact Name
+- Quantity
+- Product Interest
+- Needed Date
+- Source Campaign
+- Link ไป Internal CRM เท่านั้น
+
+ห้ามส่งข้อมูลละเอียดเกินจำเป็นเข้ากลุ่ม LINE
+
+======================================================================
+40. P2-7 Lead Dashboard และ Conversion Analytics — Target Design
+======================================================================
+
+Roles:
+- Sales
+- Sales Manager
+- Marketing
+- Admin
+- Auditor
+
+Lead List:
+- RFQ ID
+- Submitted Date
+- Company
+- Contact
+- Product
+- Quantity
+- Budget
+- Needed Date
+- Source/Medium/Campaign
+- Owner
+- Status
+- Webhook Status
+- Last Activity
+
+Actions:
+- Assign Owner
+- Change Status
+- Add Note
+- Schedule Follow-up
+- Open NextERP/CRM Record
+- Retry Integration ตาม Permission
+- Export ตาม Permission
+
+KPIs:
+- RFQ Count
+- Qualified Lead Rate
+- Quote Rate
+- Win Rate
+- Lost Reason
+- Average Response Time
+- Average Time to Quote
+- Average Deal Size เมื่อมีข้อมูล
+- Conversion by Source/Medium/Campaign
+- Conversion by Landing Page
+- Conversion by Product/Category
+- Webhook Success/Failure/Dead Rate
+- Mobile/Desktop Conversion
+- Form Abandonment
+
+Privacy:
+- Mask PII ตาม Role
+- Audit Export
+- Retention
+- No public analytics endpoint
+
+======================================================================
+41. P2-8 AI Gift Set Recommendation — Target Design
+======================================================================
+
+Objective:
+แนะนำชุด Gift Set ตามงบ จำนวน โอกาส ผู้รับ ภาพลักษณ์ และวันใช้งาน โดยใช้ Catalog และ Pricing ที่อนุมัติ
+
+Inputs:
+- Occasion
+- Recipient Type
+- Quantity
+- Budget per Set
+- Needed Date
+- Industry
+- Brand Tone
+- Sustainability Preference
+- Product Exclusion
+- Packaging Preference
+- Delivery Locations
+
+Approved Knowledge Sources:
+- Published Product Catalog
+- Product Compatibility Rules
+- Current Price Tier
+- Lead Time
+- MOQ
+- Portfolio ที่ได้รับสิทธิ
+- Approved FAQ
+
+Outputs:
+- Top 3 Recommendations
+- Components in each Set
+- Estimated Price Range
+- MOQ
+- Estimated Lead Time
+- Reasoning Summary แบบธุรกิจ
+- Risks/Missing Information
+- Alternative Option
+- CTA Add to Quote
+
+Guardrails:
+- ห้ามสร้าง SKU ที่ไม่มีจริง
+- ห้ามเดาราคา สต็อก ใบรับรอง หรือวันส่งมอบ
+- ถ้าข้อมูลไม่พอให้ถามหรือแสดง Missing Fields
+- Formal Quote ต้องผ่าน Sales/NextERP
+- ห้ามใช้ PII ฝึก Model โดยไม่มี Governance
+- Log Prompt/Output แบบ Redaction
+- Human Review
+- Feedback Loop
+
+Evaluation:
+- Catalog Accuracy
+- Budget Fit
+- MOQ Fit
+- Lead-time Fit
+- Recommendation Acceptance
+- Hallucination Rate
+- Conversion Lift
+- User Satisfaction
+
+======================================================================
+42. Observability และ Operations
+======================================================================
+
+REQUIRED:
+
+Application Metrics:
+- Request Rate
+- Error Rate
+- Latency p50/p95/p99
+- RFQ Submit Success
+- RFQ Validation Failure
+- Rate Limit Block
+- DB Error
+- Webhook Sent/Failed/Dead
+- Retry Queue Depth
+- Strapi Fetch Error
+- Cache Revalidation Error
+
+Logs:
+- Structured JSON
+- requestId/correlationId
+- ห้าม Log Secret
+- ห้าม Log Raw PII โดยไม่จำเป็น
+- Redact Email/Phone
+
+Alerts:
+- Health 503
+- RFQ Persistence Failure
+- Webhook Dead > threshold
+- Strapi Unavailable
+- Disk/Volume Usage
+- Backup Failure
+- Certificate Expiry
+- Error Rate Spike
+
+Dashboards:
+- Web Health
+- RFQ Pipeline
+- CMS Health
+- Integration Health
+- Deployment Status
+
+======================================================================
+43. Backup, Restore, DR และ Rollback
+======================================================================
+
+SQLite Current:
+- Backup leads.sqlite, WAL และ SHM อย่างถูกวิธี หรือใช้ SQLite Backup API/Snapshot ที่สอดคล้อง
+- Persistent Volume Snapshot
+- Encryption
+- Restore Test
+
+Strapi:
+- Database Backup
+- Media Backup
+- Version Compatibility
+- Restore Runbook
+
+RPO/RTO ต้องกำหนดโดยธุรกิจ
+
+Deployment Rollback:
+- Container Image Tag แบบ Immutable
+- Keep Previous Stable Image
+- Database Migration ต้อง Backward-compatible หรือมี Rollback Plan
+- Smoke Test ก่อน Switch Traffic
+- Rollback Trigger เมื่อ Health/Conversion Error
+
+REQUIRED DR Test:
+- Restore Lead DB
+- Restore CMS DB
+- Restore Media
+- Verify RFQ and Published Content
+- Record Evidence and Date
+
+======================================================================
+44. UAT Test Matrix
+======================================================================
+
+Functional:
+- ทุก Static Route เปิดได้
+- Dynamic Slug ถูกต้อง
+- 404 ทำงาน
+- Category Filter Relation ถูกต้อง
+- Product Metadata ถูกต้อง
+- Quote Submit Success
+- Quote Validation Error
+- Rate Limit
+- Honeypot
+- Request ID
+- Webhook Failure and Retry
+- Strapi Publish/Unpublish
+- Revalidate
+
+SEO:
+- Canonical
+- Title/Description
+- noindex Staging
+- robots
+- sitemap
+- Product JSON-LD
+- BlogPosting
+- Breadcrumb
+- LocalBusiness เฉพาะข้อมูลจริง
+- No duplicate metadata
+
+UX:
+- Mobile Menu
+- Keyboard
+- Screen Size 320px ขึ้นไป
+- CTA
+- Long Thai Text
+- Empty State
+- Error State
+
+Compatibility:
+- Chrome
+- Safari
+- Edge
+- Firefox
+- iOS Safari
+- Android Chrome
+
+Operations:
+- Container Restart
+- Volume Persistence
+- Health Check
+- Secret Missing -> Fail Closed
+- Backup/Restore
+- Retry Scheduler
+
+======================================================================
+45. Production Go-live Gate
+======================================================================
+
+ห้ามเปิด Production Indexing จนกว่าทุกข้อผ่าน:
+
+CONTENT_GATE:
+- ข้อมูลจริงครบ
+- รูปจริงครบ
+- ไม่มี Placeholder
+- Portfolio Permission ครบ
+
+LEGAL_GATE:
+- Privacy Approved
+- Terms Approved
+- Consent Approved
+- Retention Approved
+
+TECHNICAL_GATE:
+- npm ci ผ่าน
+- lint ผ่าน
+- typecheck ผ่าน
+- tests ผ่าน
+- build ผ่าน
+- Lighthouse ผ่าน
+- Docker Build ผ่าน
+- Security Scan ผ่าน
+- Health Check ผ่าน
+
+CMS_GATE:
+- Strapi Deploy
+- Token Least Privilege
+- Webhook
+- Backup/Restore
+- Admin Access Control
+
+RFQ_GATE:
+- Persist
+- Webhook
+- Retry
+- Dead-letter Handling
+- Backup
+- Sales Notification
+
+SEO_GATE:
+- Canonical
+- Robots
+- Sitemap
+- Structured Data
+- Redirect
+- Search Console
+
+UAT_GATE:
+- Business Sign-off
+- Sales Sign-off
+- Marketing Sign-off
+- Legal/DPO Sign-off
+- IT Sign-off
+
+ENV_GATE:
+- NEXT_PUBLIC_ALLOW_INDEXING=true
+- LEGAL_CONTENT_APPROVED=true
+- REAL_ASSETS_APPROVED=true
+- RUNTIME_SECRETS_APPROVED=true
+- RUNTIME_STRICT=true
+- CMS_MODE=strapi
+- STRAPI_FALLBACK_TO_MOCK=false
+
+======================================================================
+46. Coding Standards
+======================================================================
+
+- TypeScript strict
+- หลีกเลี่ยง any
+- Validate External Data ที่ Boundary
+- Server Token อยู่ Server-only
+- ใช้ Domain Model แยกจาก CMS Response
+- ใช้ Repository Interface เมื่อเปลี่ยน Database
+- ใช้ Idempotency กับ Integration
+- ใช้ UTC ใน Storage และแสดง Asia/Bangkok ใน UI
+- Migration ต้อง Idempotent
+- Public API ต้อง Versioned
+- Error Message ต่อ User ห้ามเปิดเผย Stack/Secret
+- Log ต้องมี Correlation ID และ Redaction
+- Component ต้อง Responsive และ Accessible
+- ห้ามใช้ dangerouslySetInnerHTML สำหรับ CMS Content
+- JsonLd ใช้ Component ที่ Escape แล้วเท่านั้น
+- ห้าม Silent Catch ที่ทำให้ Data Loss
+- Production ห้าม Mock Fallback
+- Tests ต้องอยู่ใกล้ Business Risk
+- Filename/Code/Commit เป็นภาษาอังกฤษ
+- UI/Content เป็นภาษาไทยตาม Brand
+
+Commit Examples:
+- feat(rfq): add RDS quote repository
+- fix(seo): prevent duplicate canonical paths
+- security(csp): add nonce-based policy
+- test(strapi): cover pagination overflow
+- docs(deploy): add staging rollback runbook
+
+======================================================================
+47. Definition of Done ต่อ Feature
+======================================================================
+
+Feature ถือว่าเสร็จเมื่อ:
+
+1. Requirement และ Acceptance Criteria ชัดเจน
+2. Code ผ่าน Review
+3. Typecheck ผ่าน
+4. Unit/Integration/E2E Test ที่เกี่ยวข้องผ่าน
+5. Security/Privacy Impact ถูกประเมิน
+6. Accessibility ถูกทดสอบ
+7. Responsive ถูกทดสอบ
+8. Error/Empty/Loading State ครบ
+9. Logging/Metric/Alert ที่จำเป็นครบ
+10. Environment และ Secret Documented
+11. Migration/Backfill ครบ
+12. Rollback Plan ครบ
+13. README/Runbook อัปเดต
+14. Staging UAT ผ่าน
+15. Product Owner/Business Sign-off
+
+======================================================================
+48. ลำดับการพัฒนาที่แนะนำ
+======================================================================
+
+Sprint 0 — Baseline Verification
+- แตก ZIP
+- npm ci
+- run check
+- run lhci
+- docker build/run
+- บันทึก Baseline Result
+- เปิด Issue สำหรับ Failure ทุกข้อ
+
+Sprint 1 — CMS Production Foundation
+- สร้าง Strapi App
+- RDS
+- OBS
+- RBAC
+- Webhook
+- Backup/Restore
+
+Sprint 2 — Real Content and Legal
+- Migrate Product/Category/Article/FAQ/Portfolio
+- Replace Brand/Contact/Assets
+- Legal Review
+- SEO Review
+
+Sprint 3 — Staging/UAT
+- Deploy Staging
+- noindex
+- Full UAT
+- Performance/Security Test
+- Fix Defects
+
+Sprint 4 — Lead Platform Scale
+- Repository Interface
+- RDS Lead Store
+- Redis Rate Limit
+- Dead-letter Operations
+- Monitoring
+
+Sprint 5 — NextERP/CRM and LINE OA
+- Integration Contract
+- Idempotent RFQ Sync
+- Status Sync
+- LINE OA Middleware
+
+Sprint 6 — Quote Basket and Configurator
+- Basket
+- Configuration Rule
+- Price Estimate
+- Convert to RFQ
+
+Sprint 7 — Artwork and Mockup
+- Presigned Upload
+- Scan
+- Asset Governance
+- Mockup Worker
+- Proof Approval
+
+Sprint 8 — Dashboard and AI
+- Lead Dashboard
+- Funnel Analytics
+- Approved Catalog RAG/Recommendation
+- Human Review and Evaluation
+
+======================================================================
+49. คำสั่งเริ่มต้น
+======================================================================
+
+Local Development:
+
+```bash
+unzip premium-giftset-starter-v1.1-production.zip
+cd premium-giftset-starter-v1.1-production
+cp .env.example .env.local
+npm ci
+npm run db:migrate
+npm run dev
+```
+
+Quality:
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npm run lhci
+```
+
+All-in-one:
+
+```bash
+npm run check
+```
+
+Docker:
+
+```bash
+docker build -t premium-giftset:v1.1 .
+docker run --rm \
+  --env-file .env.local \
+  -e RUN_DB_MIGRATIONS=true \
+  -v premium-giftset-data:/app/.data \
+  -p 3000:3000 \
+  premium-giftset:v1.1
+curl -f 'http://127.0.0.1:3000/api/health?deep=1'
+```
+
+Retry Worker:
+
+```bash
+curl -X POST https://www.example.com/api/jobs/retry-quotes \
+  -H 'Authorization: Bearer <CRON_SECRET>'
+```
+
+======================================================================
+50. External Inputs ที่ยังต้องได้รับ
+======================================================================
+
+Business:
+- ชื่อแบรนด์จริง
+- ชื่อนิติบุคคล
+- Tax ID
+- Address
+- Phone
+- Email
+- LINE OA
+- Business Hours
+- Sales SLA
+- MOQ Policy
+- Price Disclaimer
+- Payment/Delivery Terms
+
+Content:
+- Product Catalog
+- Product Images
+- Category Images
+- Material/Decoration Detail
+- Portfolio Permission
+- Client Logo Permission
+- FAQ Approved
+- Blog Plan
+
+Technical:
+- Production Domain
+- Huawei Cloud Environment
+- RDS Decision
+- OBS Bucket/CDN
+- GitLab Project/Runner
+- Secret Manager
+- Monitoring Stack
+- NextERP API
+- CRM API
+- LINE OA Credentials
+
+Legal:
+- Privacy Notice
+- Terms
+- Consent Text
+- Retention
+- Data Subject Request Contact
+- Processor Agreements
+
+======================================================================
+51. Expected Deliverables จาก Agent/ทีมพัฒนา
+======================================================================
+
+ทุก Phase ต้องส่งอย่างน้อย:
+
+- Source Code
+- Migration
+- Tests
+- Environment Template
+- API Contract/OpenAPI เมื่อมี API ใหม่
+- Security Notes
+- Data Mapping
+- Deployment Configuration
+- Monitoring/Alert Configuration
+- Runbook
+- Backup/Restore Procedure
+- Rollback Procedure
+- UAT Test Cases
+- UAT Evidence
+- Release Notes
+- Known Limitations
+- SHA-256 ของ Release Artifact
+
+======================================================================
+52. Final Non-negotiable Rules
+======================================================================
+
+- อย่าเปิด Indexing ขณะใช้ Mock Data
+- อย่าอ้าง Build/Test/Deploy ผ่านโดยไม่มีหลักฐาน
+- อย่าเก็บ Lead เฉพาะใน Webhook โดยไม่ Persist ก่อน
+- อย่าใช้ SQLite สำหรับ Multi-instance Production
+- อย่าเปิด Public Strapi Permission เกิน find/findOne ที่จำเป็น
+- อย่า Render Raw CMS HTML
+- อย่าใช้ URL รูปจาก Host ที่ไม่อยู่ Allowlist
+- อย่าใส่ Secret ใน Git, Client Bundle หรือ Public Log
+- อย่าส่ง PII ไป LINE/Analytics มากเกินจำเป็น
+- อย่าให้ AI เดาราคา สต็อก MOQ หรือ Lead Time
+- อย่า Publish Portfolio โดยไม่มีสิทธิ
+- อย่าลบ Accessibility เพื่อความสวยงาม
+- อย่าลด Quality Gate เพื่อให้ Pipeline ผ่าน
+- ทุก Integration ต้อง Idempotent, Observable และมี Retry/Dead-letter
+- ทุก Production Change ต้องมี Rollback Plan
+
+END_OF_LLMs.text

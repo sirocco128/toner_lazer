@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Premium gift set hero">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#14352A"/>
+      <stop offset="55%" stop-color="#1E4A3A"/>
+      <stop offset="100%" stop-color="#0F2A21"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#g)"/>
+  <rect x="180" y="220" width="520" height="420" rx="28" fill="#E9F0EA" opacity="0.92"/>
+  <rect x="220" y="270" width="440" height="40" rx="8" fill="#B08A3E"/>
+  <rect x="220" y="340" width="300" height="18" rx="6" fill="#14352A" opacity="0.35"/>
+  <rect x="220" y="380" width="360" height="18" rx="6" fill="#14352A" opacity="0.25"/>
+  <circle cx="1100" cy="390" r="170" fill="#B08A3E" opacity="0.85"/>
+  <circle cx="1100" cy="390" r="110" fill="#D9C08A"/>
+  <rect x="980" y="560" width="240" height="90" rx="16" fill="#E9F0EA" opacity="0.8"/>
+</svg>

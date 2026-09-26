@@ -1,0 +1,543 @@
+# DESIGN-LLMS.txt — Premium Gift Set Web
+# Visual Theme, Color Tokens, and Retheme Playbook
+
+DOCUMENT_TYPE: Design System Inventory / Theme Handoff for LLM and humans
+PROJECT: premium-giftset-web
+DOCUMENT_DATE: 2026-09-06
+PRIMARY_LANGUAGE: Thai
+CODE_LANGUAGE: English
+RELATED_DOCS:
+- docs/LLMs.txt          = product/engineering runbook (ไม่ใช่แหล่งความจริงของธีม)
+- docs/UX-POLISH.md      = UX ที่ทำแล้ว (nav, sticky CTA, empty state, copy)
+- app/globals.css        = CSS custom properties + dark class + utility classes
+- tailwind.config.ts     = Tailwind color/font/radius tokens (hex ซ้ำกับ CSS)
+- app/layout.tsx         = ฟอนต์ Google + ThemeProvider
+- components/ui/button.tsx = CTA variants
+
+วิธีใช้เอกสารนี้เมื่อจะปรับสีหรือธีม:
+1. อ่าน §0 สถานะจริงก่อน — อย่าเชื่อแค่ docs/LLMs.txt §12 เพราะข้อมูลฟอนต์และ dark mode คลาดเคลื่อน
+2. เปลี่ยนสีต้องแก้ทั้ง globals.css และ tailwind.config.ts พร้อมกัน (ดู §3 Dual Source)
+3. อย่าแก้เฉพาะ --primary / --accent แล้วคิดว่า UI จะเปลี่ยน — คอมโพเนนต์เกือบทั้งหมดใช้ชื่อ forest/brass/ink/paper
+4. สีแบรนด์ภายนอก (LINE, PromptPay) และสี SKU สินค้า ห้ามผูกกับธีมเว็บ
+5. ตรวจ contrast WCAG AA ทุกคู่ข้อความหลังเปลี่ยนสี (ดู §5)
+6. ตรวจ print CSS และ canvas mockup ที่ hardcode hex
+
+คำว่า CURRENT = มีในโค้ดตอนนี้
+คำว่า PREPARED = มีโค้ดรองรับแต่ยังไม่เปิดใช้
+คำว่า HARDCODED = ค่า hex ในไฟล์อื่น นอก token
+คำว่า CONTENT-THEME = ธีมเนื้อหาของขวัญ (ธรรมชาติ/วัฒนธรรม) ไม่ใช่ visual theme
+
+======================================================================
+0. สถานะจริงของธีม (อ่านก่อนแก้)
+======================================================================
+
+CURRENT visual identity:
+- Aesthetic: Premium corporate packaging — เขียวป่าเข้ม + ทองเหลือง/brass
+- Mood: สุภาพ เชื่อถือได้ ไม่ดู marketplace ราคาถูก
+- Mode: Light only ใน production UI
+- Dark mode: PREPARED ใน CSS + Tailwind `dark:` หลายจุด แต่ยังไม่ทำงาน
+- Theme toggle: มีไฟล์ ThemeToggle.tsx แต่ไม่มีที่ไหน import
+- ThemeProvider: เป็น no-op (return children) เพื่อกัน hydration mismatch
+- next-themes: ติดตั้งใน package.json แต่ ThemeProvider ไม่ได้ใช้
+- Tailwind darkMode: ["class"] — ต้องใส่ class "dark" ที่ <html> จึงจะสลับ
+- Semantic tokens (primary/accent/background): มีใน CSS แต่คอมโพเนนต์ไม่ใช้ bg-primary / text-primary
+
+สองพื้นผิวหลักที่ใช้สีชุดเดียวกัน:
+1. Storefront (ผู้ซื้อ) — Navbar paper โปร่ง, Hero forest เต็มจอ, Footer forest, CTA brass วงรี
+2. Ops console (/ops) — header forest ทึบ, พื้นหน้า forest-mist/40, การ์ด paper, ปุ่ม forest (ไม่ใช่ brass)
+
+======================================================================
+1. มีอะไรอยู่แล้ว — แผนที่ไฟล์ธีม
+======================================================================
+
+แหล่ง token:
+  app/globals.css              CSS variables :root + .dark + prose + mesh + glass + print + reduced-motion
+  tailwind.config.ts           colors.forest/brass/ink/paper + semantic var() + fontFamily + maxWidth.content + borderRadius
+  app/layout.tsx               Sarabun + Geist + Noto Sans Thai; body ใช้ sarabun.className
+  components/theme-provider.tsx  CURRENT: pass-through, ไม่เปิด next-themes
+  components/ThemeToggle.tsx   PREPARED: ใช้ useTheme() จาก next-themes — ยังไม่ต่อเข้า Navbar
+  components/ui/button.tsx     ปุ่มแบรนด์: default=brass, forest, outline, ghost, link
+  components/ui/sonner.tsx     Toast: paper/ink/forest (theme="system" แต่ไซต์ยัง light)
+
+คอมโพเนนต์ที่กำหนดหน้าตาหลักของแบรนด์:
+  components/Navbar.tsx        sticky, paper/75 blur, โลโก้ forest, CTA Button default (brass)
+  components/Footer.tsx        พื้น forest, ชื่อแบรนด์ brass-soft, ตัวอักษร paper
+  components/MobileStickyCta.tsx  แถบล่างมือถือ: ขอใบเสนอราคา = brass, LINE = สี LINE
+  components/ProductCard.tsx   การ์ด rounded-2xl, hover ยกขึ้น + ขอบ brass, dark: สำรองไว้
+  components/EmptyState.tsx    กรอบ dashed forest, พื้น mist, CTA brass วงรี
+  components/ProcessSteps.tsx  หมายเลขวงกลม forest, การ์ด paper
+  components/EnvironmentBanner.tsx  แถบสาธิตพื้น brass ตัวอักษร forest
+  app/page.tsx                 Hero เต็มจอ forest + ภาพ overlay + CTA brass วงรี
+  app/ops/layout.tsx           คอนโซล: bg-forest-mist/40, header bg-forest text-paper
+
+ยูทิลิตี้ CSS ที่เป็นลายเซ็นภาพ:
+  .bg-premium-mesh             radial brass + forest จางบนพื้น --background
+                               ใช้ที่ /products, /catalog, /catalog/[category]
+  .glass-panel                 กระจกโปร่ง paper/75 + blur (นิยามแล้ว — ตรวจก่อนว่ามีใช้จริงกี่จุด)
+  .prose-custom                บทความ: h2/h3 forest, p ink/85, blockquote ขอบ brass
+  .pb-mobile-cta               กันแถบ CTA มือถือทับเนื้อหา
+  .document-sheet              print color-adjust สำหรับเอกสารพิมพ์
+
+ไม่ใช่ visual theme (อย่าสับสน):
+  lib/seo-themes.ts            IDEA_THEMES = ธรรมชาติ / วัฒนธรรม / ท่องเที่ยว / สุขภาพ
+                               เป็น landing เนื้อหาของขวัญ ที่ /ideas/[slug] ไม่ได้เปลี่ยน CSS palette
+  lib/sku-master-schema.ts     สีสินค้า (ดำ ขาว เงิน ทอง กรมท่า …) เป็นข้อมูล SKU ไม่ใช่ UI token
+  lib/mockup-studio.ts         สีตัวสินค้าใน mockup canvas
+
+======================================================================
+2. Color tokens — ค่าปัจจุบันทั้งหมด
+======================================================================
+
+2.1 Brand primitives (ใช้จริงเกือบทั้งเว็บ)
+
+ชื่อ Tailwind          Hex         CSS variable           บทบาท
+forest / forest.DEFAULT #14352A    --color-forest         สีแบรนด์หลัก, heading, header ops, footer bg, ปุ่ม ops
+forest.light           #1E4A3A    --color-forest-light    hover ปุ่ม variant="forest"
+forest.mist            #E9F0EA    --color-forest-mist     พื้นอ่อน, badge, empty state, ops page bg, code chip
+brass / brass.DEFAULT  #B08A3E    --color-brass           CTA ผู้ซื้อ, focus ring, แถบสาธิต, ป้ายเคลียร์
+brass.soft             #D9C08A    --color-brass-soft      hover CTA, ตัวอักษรบนพื้น forest (hero/footer)
+ink                    #22282C    --color-ink             ตัวอักษรหลักบนพื้นสว่าง
+paper                  #FFFFFF    --color-paper           พื้นการ์ด, ตัวอักษรบนพื้น forest
+
+Opacity ที่ใช้บ่อย (Tailwind slash):
+- border-forest/10   เส้นบางของการ์ด/navbar
+- border-forest/15   เส้นการ์ด ops
+- border-forest/20   input, empty dashed, outline button
+- border-forest/30   ปุ่ม secondary ops
+- text-ink/75        คำอธิบาย
+- text-ink/70        helper
+- text-ink/60 / 55 / 45 / 40  ข้อความรองลดหลั่น
+- text-paper/80 / 70 / 60     ข้อความบน footer/hero
+- bg-forest-mist/40  พื้นหน้า ops
+- bg-forest-mist/50  empty state
+- bg-paper/75        navbar โปร่ง
+- bg-paper/15        pill บน hero
+- border-brass/25    pill บน hero
+- hover:border-brass/30  ProductCard
+- hover:border-brass/50  outline button
+
+2.2 Semantic CSS tokens ใน :root (มีแล้ว แต่ UI เกือบไม่ผูก)
+
+--background           #ffffff     map Tailwind background
+--foreground           #22282c     map Tailwind foreground
+--card                 #ffffff     map Tailwind card
+--muted                #e9f0ea     = forest.mist
+--border               rgba(20, 53, 42, 0.12)
+--ring                 #b08a3e     = brass — ใช้ที่ :focus-visible และ Button ring
+--primary              #14352a     = forest
+--primary-foreground   #ffffff
+--accent               #b08a3e     = brass
+--accent-foreground    #14352a
+
+สำคัญ: grep ทั้งโปรเจกต์ไม่พบ bg-primary / text-primary / bg-accent ใน TSX
+ดังนั้นการเปลี่ยนแค่ --primary จะไม่เปลี่ยนปุ่มหรือ heading จนกว่าจะ refactor class
+
+2.3 Dark class ใน globals.css (.dark) — PREPARED ไม่ได้เปิด
+
+--color-forest-mist    #1a332b     mist กลายเป็นเขียวเข้ม
+--color-ink            #e8eee9     ตัวอักษรสว่าง
+--color-paper          #10211b     paper กลายเป็นพื้นมืด
+--background           #10211b
+--foreground           #e8eee9
+--card                 #163028
+--muted                #1a332b
+--border               rgba(255, 255, 255, 0.1)
+--primary              #d9c08a     สลับเป็น brass-soft
+--primary-foreground   #14352a
+
+สิ่งที่ .dark ไม่ได้ override:
+- --color-forest, --color-forest-light  ยังเขียวเข้ม — ถ้า Tailwind ชี้ CSS var จะ heading มืดบนพื้นมืด
+- --color-brass, --color-brass-soft
+- --accent, --ring
+
+ดังนั้นแม้ใส่ class dark ที่ html ตอนนี้:
+- คลาสที่ผูก semantic var (background/foreground) จะเปลี่ยน
+- คลาส bg-forest / text-forest / text-ink / bg-paper ของ Tailwind ยังเป็น hex คงที่ จาก tailwind.config.ts
+- คอมโพเนนต์ที่เขียน dark: เอง (Navbar, ProductCard) จะทำงานถ้ามี class dark
+- หน้า ops ส่วนใหญ่ไม่มี dark: จะพัง contrast ถ้าเปิดมืดทั้งไซต์โดยไม่ปรับ
+
+2.4 Tailwind config สีที่ map กับ CSS var (จะตาม :root/.dark)
+
+background, foreground, card, muted, border, ring,
+primary.DEFAULT, primary.foreground, accent.DEFAULT, accent.foreground
+
+2.5 Tailwind config สีที่เป็น hex คงที่ (ไม่ตาม CSS var)
+
+forest.DEFAULT / light / mist
+brass.DEFAULT / soft
+ink
+paper
+
+นี่คือเหตุผลหลักที่ “เปลี่ยนธีมที่ :root แล้วหน้าเว็บไม่เปลี่ยน”
+
+======================================================================
+3. Dual source of truth — ต้องรู้ก่อน retheme
+======================================================================
+
+ค่าเดียวกันถูกเขียนสองที่:
+
+globals.css :root          tailwind.config.ts
+#14352a --color-forest     forest.DEFAULT: "#14352A"
+#1e4a3a --color-forest-light
+#e9f0ea --color-forest-mist
+#b08a3e --color-brass
+#d9c08a --color-brass-soft
+#22282c --color-ink
+#ffffff --color-paper
+
+Playbook เปลี่ยนสีแบรนด์ (เช่น เปลี่ยน forest เป็น navy):
+
+ขั้นต่ำที่ต้องทำพร้อมกัน:
+1. แก้ hex ใน tailwind.config.ts กลุ่ม forest/brass/ink/paper
+2. แก้ hex ใน app/globals.css :root ทั้ง --color-* และ --background/--primary/--accent/--ring
+3. แก้ .dark ให้สอดคล้อง (ถ้าจะเปิด dark)
+4. แก้ radial-gradient ใน .bg-premium-mesh (rgba ของ brass 176,138,62 และ forest 20,53,42)
+5. แก้ shadow ใน MobileStickyCta: rgba(20,53,42,0.08)
+6. แก้ canvas ใน ProductMockupStudio.tsx ที่ fillStyle "#14352a" / "#1e4a3a"
+7. แก้ lib/mockup-studio.ts preset forest/brass ถ้าต้องการให้ mockup ตามแบรนด์ใหม่
+8. รัน lint + เปิดหน้า /, /products, /contact, /ops, พิมพ์เอกสาร, แคตตาล็อก
+
+อย่าทำ:
+- เปลี่ยนเฉพาะ CSS variable แล้วคาดหวัง bg-forest เปลี่ยน
+- ใส่สีใหม่เป็น hex ตรงใน className ของหน้าใหม่ — ใช้ token เดิมหรือเพิ่ม token ใน config
+- ใช้สี Tailwind default (emerald/sky/violet) กับ UI ผู้ซื้อ — ตอนนี้ใช้เฉพาะ ops SKU class badge
+
+แนะนำถ้าจะ retheme จริงระยะยาว:
+- ให้ forest/brass/ink/paper ใน Tailwind ชี้ var(--color-forest) ฯลฯ เหมือน primary
+- เหลือ hex ที่เดียวใน :root / .dark
+- ค่อยย้าย Button จาก bg-brass → bg-accent ถ้าต้องการ semantic layer
+
+======================================================================
+4. การใช้งานสีตามบทบาท UI (มีอยู่แล้ว)
+======================================================================
+
+Canvas / พื้น:
+- body                 --background / --foreground
+- หน้าแคตตาล็อกสินค้า   bg-premium-mesh
+- หน้า ops             bg-forest-mist/40
+- การ์ด                 bg-paper + border-forest/10 หรือ /15
+- Hero หน้าแรก         bg-forest + ภาพ opacity-40 + gradient from-forest
+- Footer               bg-forest text-paper
+- Navbar               bg-paper/75 backdrop-blur + dark:bg-forest/70 (สำรอง)
+
+ข้อความ:
+- H1/H2/H3 บนพื้นสว่าง  text-forest font-bold
+- โลโก้ navbar          text-forest (dark:text-brass-soft)
+- ชื่อแบรนด์บน footer   text-brass-soft
+- เนื้อหา               text-ink, text-ink/75
+- ข้อความบน hero        text-paper, text-paper/70, text-brass-soft สำหรับ kicker
+
+ปุ่ม (components/ui/button.tsx):
+- default   พื้น brass, ตัวอักษร forest, hover brass-soft — CTA ผู้ซื้อหลัก “ขอใบเสนอราคา”
+- forest    พื้น forest, ตัวอักษร paper, hover forest-light — ใช้ ops และบางจุดภายใน
+- outline   ขอบ forest/20, พื้น paper/80, hover mist + ขอบ brass
+- ghost     ตัวอักษร forest, hover mist
+- link      ตัวอักษร brass ขีดเส้นใต้
+- รูปทรง    rounded-full ทุก variant ยกเว้น link
+- ความสูง   min-h-11 (default), min-h-9 (sm), min-h-12 (lg) — เป้าสัมผัส ~44px
+
+ลิงก์ CTA ที่ไม่ผ่าน Button (เขียน class เองให้หน้าตาเดียวกัน):
+- Hero หลัก: rounded-full bg-brass text-forest hover:bg-brass-soft
+- Hero รอง: rounded-full border-paper/40 text-paper
+- EmptyState หลัก: แบบ brass วงรี
+- EmptyState รอง: border-forest/20
+- Mobile sticky: brass วงรี
+- Ops หลัก: rounded bg-forest text-paper (มุมเหลี่ยมกว่า storefront — ไม่ใช่ rounded-full)
+
+โฟกัส:
+- globals :focus-visible outline 2px --ring (brass) offset 2
+- Button ใช้ ring-ring
+- Skip link: bg-brass text-forest
+
+สถานะ / badge:
+- สกรีนโลโก้ได้     paper/90 + text-forest + ไอคอน emerald-600 (HARDCODED Tailwind emerald)
+- ป้ายเคลียร์       bg-brass text-forest
+- โหมดสาธิต        bg-brass text-forest ทั้งแถบ
+- SKU class A      emerald-100/900   (ops เท่านั้น)
+- SKU class B      sky-100/900
+- SKU class C      amber-100/950
+- SKU class D      violet-100/900
+- บันเดิล          forest-mist + text-forest
+
+Toast (sonner):
+- กรอบ forest/10, พื้น paper/90, ข้อความ ink
+- ปุ่ม action forest/paper
+- theme="system" — ถ้าเปิด OS dark โดยยังไม่เปิด class dark ของไซต์ อาจไม่ตรงกับ UI
+
+======================================================================
+5. Contrast และคู่สีที่ต้องรักษา
+======================================================================
+
+คู่ที่ใช้บ่อย (ประเมินคร่าวสำหรับ AA):
+
+พื้น #14352A forest + ตัวอักษร #FFFFFF paper     ผ่าน ตัวหนา/เนื้อหาบน footer, hero, ops header
+พื้น #14352A + brass-soft #D9C08A                 ใช้ kicker/ชื่อแบรนด์ — ตรวจใหม่ถ้าเปลี่ยน brass
+พื้น #B08A3E brass + ตัวอักษร #14352A forest      CTA หลัก — ต้องคง contrast เมื่อเปลี่ยนคู่ใดคู่หนึ่ง
+พื้น #FFFFFF paper + #22282C ink                  เนื้อหาหลัก
+พื้น #FFFFFF + #14352A forest                     heading
+พื้น #E9F0EA mist + #14352A forest                badge, empty, ops canvas
+พื้น brass แถบสาธิต + ตัวอักษร forest             ต้องอ่านได้บนมือถือ
+
+กฎเมื่อ retheme:
+- ตัวอักษรเนื้อหาบนพื้น ต้อง >= 4.5:1
+- ตัวอักษรใหญ่/heading >= 3:1
+- ห้ามใช้สีอย่างเดียวสื่อ error/success — ฟอร์มมี aria อยู่แล้ว
+- อย่าใช้ #000000 หรือ #FFFFFF เป็น token ข้อความหลักถ้าไม่จำเป็น (ink ปัจจุบันไม่ใช่ดำบริสุทธิ์)
+- ปุ่ม brass ถ้าทำให้สว่างขึ้น ตัวอักษร forest อาจตก AA — ปรับคู่กัน
+
+======================================================================
+6. สีที่ห้ามดึงเข้าธีมเว็บ (HARDCODED / ภายนอก)
+======================================================================
+
+LINE Official:
+  components/LineLabSpa.tsx
+  - bubble เขียว LINE #06C755
+  - พื้นแชท #748189
+  - ข้อความออก #8DE37D
+  - แถบพิมพ์ #EEEEEE
+  ต้องคงสี LINE ตามแบรนด์ LINE ไม่ตาม forest/brass
+
+PromptPay:
+  components/PromptPayMark.tsx  bg-[#1BA0E2]
+  โลโก้/เครื่องหมายพร้อมเพย์ — ห้ามเปลี่ยนเป็น brass
+
+Print:
+  globals.css @media print body background #fff !important
+  DocumentToolbar canvas fill #ffffff
+
+Mockup canvas:
+  ProductMockupStudio.tsx
+  - พื้นสตูดิโอ gradient #f7faf8 → #e8f0eb → #d2e0d6
+  - ข้อความ/เส้น #14352a, #1e4a3a
+  - default textColor state "#14352A"
+  - fill #ffffff บางชั้น
+  ไฟล์นี้จะไม่ตาม Tailwind ถ้าไม่แก้ hex โดยตรง
+
+SKU สีสินค้า (ข้อมูล ไม่ใช่ UI):
+  lib/sku-master-schema.ts เช่น #111111 ดำ, #C9A227 ทองสินค้า, #2563EB น้ำเงิน
+  แสดงเป็น swatch ใน /ops/products/colors
+
+Preset สีตัวสินค้า mockup:
+  lib/mockup-studio.ts stainless/black/white/forest/navy/brass
+
+======================================================================
+7. Typography — ของจริงในโค้ด (docs/LLMs.txt §12 ล้าสมัย)
+======================================================================
+
+โหลดใน app/layout.tsx ผ่าน next/font/google:
+
+1. Sarabun
+   - subsets thai + latin
+   - weight 400, 500, 600, 700
+   - CSS variable --font-sarabun
+   - CURRENT body class = sarabun.className  (ฟอนต์หลักของทั้งไซต์)
+
+2. Geist
+   - subsets latin
+   - variable --font-geist
+   - อยู่ใน font-sans stack เป็นลำดับถัดจาก Sarabun
+   - ไม่ได้ตั้งเป็น body หลัก
+
+3. Noto Sans Thai
+   - subsets thai + latin
+   - weight 400, 500, 600, 700
+   - variable --font-noto-sans-thai
+   - เป็น fallback ใน stack ไม่ใช่ display font แยก
+
+Tailwind fontFamily.sans ลำดับ:
+  var(--font-sarabun)
+  var(--font-geist)
+  var(--font-noto-sans-thai)
+  "Sarabun"
+  "Noto Sans Thai"
+  "Leelawadee UI"
+  Tahoma
+  system-ui
+  sans-serif
+
+ไม่มี display serif แยก — heading ใช้ font-sans + font-bold + text-forest
+รหัสสินค้าใน ops ใช้ font-mono (system stack ไม่ได้กำหนด token เอง)
+
+ขนาดที่พบซ้ำ:
+- Hero H1: text-3xl sm:text-5xl font-bold tracking-tight
+- Section H2: text-2xl sm:text-3xl font-bold text-forest
+- Card title: text-lg font-semibold
+- Body: text-base / text-sm leading-relaxed
+- Kicker: tracking-[0.18em] text-brass-soft
+- Navbar: text-sm font-medium
+- Badge: text-xs
+- Skip/CTA: min-h-11
+
+======================================================================
+8. Spatial grammar, มุมโค้ง, ความลึก
+======================================================================
+
+ความกว้าง:
+- Storefront max-w-content = 72rem (1152px) จาก tailwind.config
+- Ops max-w-6xl
+- Padding หน้า: px-4 sm:px-6
+- Section แนวตั้ง: py-16 เป็นจังหวะหลักของ storefront
+- Hero: min-h-[100svh], เนื้อหาชิดล่าง (justify-end) ไม่จัดกลางแนวตั้ง
+
+มุมโค้ง token ใน Tailwind:
+- sm  0.45rem
+- md  0.65rem
+- lg  0.9rem
+
+ที่ใช้จริงบ่อยกว่า token ชื่อ:
+- rounded-full   ปุ่มผู้ซื้อ, pill, หมายเลขขั้นตอน — นี่คือ signature ของ storefront
+- rounded-2xl    การ์ดสินค้า, process step, บางแผง
+- rounded-3xl    EmptyState
+- rounded-xl     รูปใน ProductCard, การ์ด ops
+- rounded        input ops, ปุ่ม ops บางตัว — มุมเหลี่ยมกว่าฝั่งขาย
+
+ความลึก:
+- Navbar / sticky CTA: backdrop-blur + พื้นโปร่ง
+- ProductCard: shadow-sm → hover shadow-xl + translate-y-1
+- Hero ภาพ: isolate + gradient ทับ
+- ไม่มี elevation system เป็น token (ไม่มี --shadow-*)
+
+======================================================================
+9. Motion
+======================================================================
+
+CURRENT:
+- Button: transition-all duration-300
+- ProductCard: transition-all duration-300 + hover -translate-y-1
+- html scroll-behavior: auto (ไม่ smooth ที่ CSS; มี SmoothScroll component)
+- globals @media (prefers-reduced-motion: reduce) บังคับ animation/transition 0.01ms
+
+ห้ามเพิ่ม fade-in ทั่วไปโดยไม่เคารพ reduced-motion
+ห้าม animation ที่ทำให้ CLS ของ Lighthouse เกิน 0.1
+
+======================================================================
+10. พื้นผิวแต่ละโซน — สิ่งที่มีแล้ว
+======================================================================
+
+10.1 Storefront ผู้ซื้อ
+หน้าที่ใช้ธีมเดียวกัน: /, /premium-giftset, /products, /products/[slug],
+/giftset/[category], /catalog, /customize-gift-set, /portfolio, /blog,
+/ideas, /contact, /about, /privacy, /terms, not-found, error
+
+ลายเซ็น:
+- CTA หลักสี brass วงรี ตัวอักษร forest
+- Heading เขียว forest
+- Hero หรือ footer เขียวทึบ + ข้อความสว่าง
+- Sticky header ขาวโปร่ง
+- แถบมือถือ brass + LINE
+
+10.2 Ops /ops
+- noindex
+- Header ทึบ forest ตัวอักษร paper
+- พื้น mist จาง
+- ปุ่มหลัก bg-forest ไม่ใช่ brass
+- มุมการ์ด/อินพุตเหลี่ยมกว่า
+- SkuClassBadge ใช้พาเลต Tailwind default แยกจากแบรนด์
+- Print: factory PO / inbound ใช้ .document-sheet และบังคับพื้นขาว
+
+10.3 วิดเจ็ตทับหน้า
+- MobileStickyCta
+- FloatingQuoteDock
+- BuyerAssistantWidget
+- Toaster
+ใช้สีแบรนด์ชุดเดียวกัน ต้องไม่ชนกันบนมือถือ (มี pb-mobile-cta)
+
+10.4 LINE Lab
+จำลองแชท LINE — สี LINE ล็อคไว้
+
+======================================================================
+11. Dark mode และ Theme switcher
+======================================================================
+
+CURRENT:
+- Light เป็นค่าเริ่มต้น (data-theme ไม่ตั้ง = forest #14352A / brass #B08A3E)
+- ThemeSwitcher ใน Navbar บันทึก localStorage key `smartgift:theme`
+- Option A navy #0b1f3a / #c59b27
+- Option B festive #8b0000 / #d4af37
+- Option C teal #005f73 / #0a9396
+- Tailwind forest/brass/ink/paper อ่านจาก CSS variables (rgb channels) จึงตามธีม
+- FlipHTML5 hotspot ฝั่งสมุดพลิกให้ชี้ URL:
+  {SITE}/contact?quote=1&productSlug={slug}
+  หรือ {SITE}/catalog?quote=1&productSlug={slug}
+  เพื่อเปิดโมดอลขอใบเสนอราคา
+
+ดู docs/DESIGN-LLMS.txt สำหรับ token เดิม และไฟล์นี้สำหรับพาเลตที่เพิ่ม
+
+
+มีแล้ว:
+- tailwind.config darkMode: ["class"]
+- .dark ใน globals.css (สลับ semantic + ink/paper/mist)
+- dark: ใน Navbar, ProductCard, ThemeToggle, skip-link ไม่ต้อง
+- next-themes dependency
+- ThemeToggle component
+
+ยังไม่มี / จงใจปิด (dark class):
+- ไม่ได้เปิด next-themes — ใช้ data-theme สำหรับพาเลตสว่าง 4 แบบแทน
+- ไม่มี class="dark" บน html
+- ThemeToggle (พระอาทิตย์/พระจันทร์) ยังไม่ถูกใส่ใน Navbar — ใช้ ThemeSwitcher สีแทน
+- หน้า ops ส่วนใหญ่ไม่มี dark:
+
+ถ้าจะเปิด dark จริง ต้องทำเป็นชุด:
+1. ให้สี primitive ชี้ CSS variables
+2. นิยาม .dark ของ forest/brass ให้ heading/CTA ยังอ่านได้
+3. เปิด NextThemesProvider attribute="class" defaultTheme="light"
+4. ใส่ ThemeToggle ใน Navbar (desktop + mobile)
+5. ไล่หน้า ops แยก — อาจบังคับ light ที่ /ops ก็ได้
+6. ตั้ง Toaster theme ตาม resolvedTheme
+
+======================================================================
+12. Checklist ปรับสีโดยไม่พังของที่มี
+======================================================================
+
+ก่อนแก้:
+[ ] อ่านไฟล์นี้ทั้งฉบับ
+[ ] ตัดสินใจว่าเปลี่ยนแค่ hue ของ forest/brass หรือรื้อ token
+[ ] ระบุว่า storefront กับ ops ใช้พาเลตเดียวกันต่อหรือไม่
+
+ระหว่างแก้:
+[ ] แก้ hex ที่ tailwind.config.ts และ globals.css ให้ตรงกัน
+[ ] แก้ .bg-premium-mesh rgba
+[ ] อย่าแตะสี LINE / PromptPay / SKU product colors
+[ ] อย่าลบ prefers-reduced-motion
+[ ] อย่าลดขนาดปุ่มต่ำกว่า min-h-11 โดยไม่มีเหตุผล a11y
+[ ] คงข้อความ CTA ผู้ซื้อเป็นภาษาไทยตาม lib/ux-copy.ts
+
+หลังแก้:
+[ ] เปิด / Hero — CTA brass อ่านได้ ภาพ overlay ยังมืดพอให้อักษรขาวอ่านได้
+[ ] เปิด /products — mesh ไม่จืดหรือฉูด
+[ ] เปิด /contact — ฟอร์ม label/error ยังเห็น
+[ ] มือถือ — sticky CTA + เมนู
+[ ] /ops — header กับปุ่ม forest ยัง contrast
+[ ] โหมดสาธิตแถบ brass
+[ ] Print เอกสาร ops ยังพื้นขาว
+[ ] Keyboard focus วง brass ยังเห็นบนทั้งพื้นขาวและพื้นเขียว
+[ ] npm run lint && npm run typecheck
+
+======================================================================
+13. สิ่งที่ docs/LLMs.txt §12 ยังไม่ครอบ (ส่วนต่างจากของจริง)
+======================================================================
+
+LLMs.txt §12 บอก:
+- ฟอนต์ Noto Sans Thai เป็นหลัก
+- ไม่พูดถึง Sarabun / Geist
+- ไม่พูดถึง dark class, ThemeToggle, next-themes
+- ไม่พูดถึง semantic CSS variables
+- ไม่พูดถึง dual hex ใน Tailwind vs :root
+- ไม่พูดถึง ops console palette
+- ไม่พูดถึง .bg-premium-mesh / glass-panel
+- ไม่พูดถึง ปุ่ม rounded-full brass vs ปุ่ม ops forest
+
+เอกสารนี้คือแหล่งความจริงของ visual theme
+docs/LLMs.txt ยังเป็นแหล่งความจริงของธุรกิจ, RFQ, SEO, security
+
+======================================================================
+14. สรุปสั้นสำหรับ agent ที่จะเปลี่ยนธีม
+======================================================================
+
+มีอยู่แล้ว: ระบบสี 2 โทน (forest + brass) + ink/paper, ปุ่มวงรี brass, การ์ดมน, hero/footer เขียวทึบ, ฟอนต์ Sarabun, mesh พื้นแคตตาล็อก, dark CSS แบบเตรียมไว้, ops ใช้โทนเดียวกันแต่ปุ่มเขียวไม่ทอง
+
+ยังไม่พร้อมแค่แก้ที่เดียว: Tailwind hex กับ CSS var แยกกัน, dark ยังไม่เปิด, semantic primary/accent ไม่มีคนใช้, canvas/mockup/LINE/PromptPay อยู่นอก token
+
+จุดเล็งเมื่อปรับสี: tailwind.config.ts + app/globals.css เป็นคู่, แล้วตามไฟล์ใน §3 ข้อ 4–7
+
+END_OF_DESIGN-LLMS.txt

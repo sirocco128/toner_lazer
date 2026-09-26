@@ -1,0 +1,690 @@
+/*
+ * UI/UX Design Brief — Premium Gift Set storefront + ops
+ * ──────────────────────────────────────────────
+ * User:        ผู้จัดซื้อองค์กรที่ต้องการของขวัญพรีเมียม — ต้องการความเชื่อมั่นและภาพลักษณ์หรู
+ * Tension:     Luxury editorial BUT operational density
+ * Aesthetic:   Smart Gift catalog — charcoal type, brand orange, warm paper
+ * Type:        Geist (display) + Sarabun (Thai body)
+ * Motion:      Cinematic 450–550ms cubic-bezier(0.22, 1, 0.36, 1)
+ * Signature:   Glass navbar + brass hairline + premium mesh
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --color-forest: #1c1c1c;
+  --color-forest-rgb: 28 28 28;
+  --color-forest-light: #333333;
+  --color-forest-light-rgb: 51 51 51;
+  --color-forest-mist: #fff3eb;
+  --color-forest-mist-rgb: 255 243 235;
+  --color-brass: #e65312;
+  --color-brass-rgb: 230 83 18;
+  --color-brass-soft: #ff7a3c;
+  --color-brass-soft-rgb: 255 122 60;
+  --color-ink: #2a2a2a;
+  --color-ink-rgb: 42 42 42;
+  --color-paper: #ffffff;
+  --color-paper-rgb: 255 255 255;
+  --background: #fff8f4;
+  --foreground: #1c1c1c;
+  --card: #ffffff;
+  --muted: #fff3eb;
+  --border: rgba(28, 28, 28, 0.1);
+  --ring: #e65312;
+  --primary: #e65312;
+  --primary-foreground: #ffffff;
+  --accent: #e65312;
+  --accent-foreground: #ffffff;
+  --font-size-base: 1.0625rem;
+  --line-height-body: 1.65;
+  --letter-spacing-display: -0.03em;
+  --radius: 0.9rem;
+  --ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-base: 220ms;
+}
+
+html[data-theme="navy"] {
+  --color-forest: #0b1f3a;
+  --color-forest-rgb: 11 31 58;
+  --color-forest-light: #163056;
+  --color-forest-light-rgb: 22 48 86;
+  --color-forest-mist: #e7eef6;
+  --color-forest-mist-rgb: 231 238 246;
+  --color-brass: #c59b27;
+  --color-brass-rgb: 197 155 39;
+  --color-brass-soft: #e0c56a;
+  --color-brass-soft-rgb: 224 197 106;
+  --color-ink: #1a2430;
+  --color-ink-rgb: 26 36 48;
+  --color-paper: #ffffff;
+  --color-paper-rgb: 255 255 255;
+  --background: #f7f9fc;
+  --foreground: #1a2430;
+  --card: #ffffff;
+  --muted: #e7eef6;
+  --border: rgba(11, 31, 58, 0.12);
+  --ring: #c59b27;
+  --primary: #0b1f3a;
+  --primary-foreground: #ffffff;
+  --accent: #c59b27;
+  --accent-foreground: #0b1f3a;
+}
+
+html[data-theme="festive"] {
+  --color-forest: #8b0000;
+  --color-forest-rgb: 139 0 0;
+  --color-forest-light: #a31212;
+  --color-forest-light-rgb: 163 18 18;
+  --color-forest-mist: #f8eaea;
+  --color-forest-mist-rgb: 248 234 234;
+  --color-brass: #d4af37;
+  --color-brass-rgb: 212 175 55;
+  --color-brass-soft: #e8d07a;
+  --color-brass-soft-rgb: 232 208 122;
+  --color-ink: #2c1616;
+  --color-ink-rgb: 44 22 22;
+  --color-paper: #fffdf8;
+  --color-paper-rgb: 255 253 248;
+  --background: #fffdf8;
+  --foreground: #2c1616;
+  --card: #fffdf8;
+  --muted: #f8eaea;
+  --border: rgba(139, 0, 0, 0.14);
+  --ring: #d4af37;
+  --primary: #8b0000;
+  --primary-foreground: #fffdf8;
+  --accent: #d4af37;
+  --accent-foreground: #8b0000;
+}
+
+html[data-theme="teal"] {
+  --color-forest: #005f73;
+  --color-forest-rgb: 0 95 115;
+  --color-forest-light: #0a7a90;
+  --color-forest-light-rgb: 10 122 144;
+  --color-forest-mist: #e6f4f5;
+  --color-forest-mist-rgb: 230 244 245;
+  --color-brass: #0a9396;
+  --color-brass-rgb: 10 147 150;
+  --color-brass-soft: #94d2bd;
+  --color-brass-soft-rgb: 148 210 189;
+  --color-ink: #001219;
+  --color-ink-rgb: 0 18 25;
+  --color-paper: #ffffff;
+  --color-paper-rgb: 255 255 255;
+  --background: #f4fbfb;
+  --foreground: #001219;
+  --card: #ffffff;
+  --muted: #e6f4f5;
+  --border: rgba(0, 95, 115, 0.14);
+  --ring: #0a9396;
+  --primary: #005f73;
+  --primary-foreground: #ffffff;
+  --accent: #0a9396;
+  --accent-foreground: #ffffff;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-forest-mist: #2a211c;
+  --color-forest-mist-rgb: 42 33 28;
+  --color-ink: #f6f1ec;
+  --color-ink-rgb: 246 241 236;
+  --color-paper: #14110f;
+  --color-paper-rgb: 20 17 15;
+  --background: #100e0c;
+  --foreground: #f6f1ec;
+  --card: #241c18;
+  --muted: #2a211c;
+  --border: rgba(255, 255, 255, 0.1);
+  --primary: #ff7a3c;
+  --primary-foreground: #1c1c1c;
+  --accent-foreground: #1c1c1c;
+}
+
+html.dark[data-theme="navy"] {
+  --color-forest-mist: #12233a;
+  --color-forest-mist-rgb: 18 35 58;
+  --color-ink: #e7eef6;
+  --color-ink-rgb: 231 238 246;
+  --color-paper: #0a1628;
+  --color-paper-rgb: 10 22 40;
+  --background: #07101c;
+  --foreground: #e7eef6;
+  --card: #12233a;
+  --muted: #12233a;
+  --primary: #e0c56a;
+  --primary-foreground: #0b1f3a;
+}
+
+html.dark[data-theme="festive"] {
+  --color-forest-mist: #2a1212;
+  --color-forest-mist-rgb: 42 18 18;
+  --color-ink: #f8eaea;
+  --color-ink-rgb: 248 234 234;
+  --color-paper: #1a0a0a;
+  --color-paper-rgb: 26 10 10;
+  --background: #140808;
+  --foreground: #f8eaea;
+  --card: #2a1212;
+  --muted: #2a1212;
+  --primary: #e8d07a;
+  --primary-foreground: #8b0000;
+}
+
+html.dark[data-theme="teal"] {
+  --color-forest-mist: #0d2a30;
+  --color-forest-mist-rgb: 13 42 48;
+  --color-ink: #e6f4f5;
+  --color-ink-rgb: 230 244 245;
+  --color-paper: #02161a;
+  --color-paper-rgb: 2 22 26;
+  --background: #011015;
+  --foreground: #e6f4f5;
+  --card: #0d2a30;
+  --muted: #0d2a30;
+  --primary: #94d2bd;
+  --primary-foreground: #001219;
+}
+
+/* Ops stays light (readable tables) even if the storefront is in dark mode,
+   but follows the selected html[data-theme] palette. */
+.ops-shell {
+  color-scheme: light;
+  --color-forest: #1c1c1c;
+  --color-forest-rgb: 28 28 28;
+  --color-forest-light: #333333;
+  --color-forest-light-rgb: 51 51 51;
+  --color-forest-mist: #fff3eb;
+  --color-forest-mist-rgb: 255 243 235;
+  --color-brass: #e65312;
+  --color-brass-rgb: 230 83 18;
+  --color-brass-soft: #ff7a3c;
+  --color-brass-soft-rgb: 255 122 60;
+  --color-ink: #2a2a2a;
+  --color-ink-rgb: 42 42 42;
+  --color-paper: #ffffff;
+  --color-paper-rgb: 255 255 255;
+  --background: #fff8f4;
+  --foreground: #1c1c1c;
+  --card: #ffffff;
+  --muted: #fff3eb;
+  --border: rgba(28, 28, 28, 0.1);
+  --ring: #e65312;
+  --primary: #e65312;
+  --primary-foreground: #ffffff;
+  --accent: #e65312;
+  --accent-foreground: #ffffff;
+}
+
+/* Solid brand buttons stay white on orange, including links that also set text-forest. */
+a.bg-brass,
+button.bg-brass {
+  color: var(--accent-foreground);
+}
+
+.ops-desk-watermark {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .ops-desk-watermark {
+    left: 16.5rem;
+  }
+}
+
+.ops-desk-watermark__sheet {
+  position: absolute;
+  inset: -45%;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
+  gap: 3.25rem 4.5rem;
+  transform: rotate(-22deg);
+}
+
+.ops-desk-watermark__tile {
+  flex: 0 0 auto;
+  color: rgb(var(--color-forest-rgb) / 0.035);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ops-desk-watermark__band {
+  position: absolute;
+  top: 50%;
+  left: -20%;
+  width: 140%;
+  margin: 0;
+  transform: translateY(-50%) rotate(-22deg);
+  color: rgb(var(--color-forest-rgb) / 0.06);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+}
+
+html.dark .ops-desk-watermark__tile {
+  color: rgb(255 255 255 / 0.025);
+}
+
+html.dark .ops-desk-watermark__band {
+  color: rgb(255 255 255 / 0.05);
+}
+
+html[data-theme="navy"] .ops-shell {
+  --color-forest: #0b1f3a;
+  --color-forest-rgb: 11 31 58;
+  --color-forest-light: #163056;
+  --color-forest-light-rgb: 22 48 86;
+  --color-forest-mist: #e7eef6;
+  --color-forest-mist-rgb: 231 238 246;
+  --color-brass: #c59b27;
+  --color-brass-rgb: 197 155 39;
+  --color-brass-soft: #e0c56a;
+  --color-brass-soft-rgb: 224 197 106;
+  --color-ink: #1a2430;
+  --color-ink-rgb: 26 36 48;
+  --color-paper: #ffffff;
+  --color-paper-rgb: 255 255 255;
+  --background: #e7eef6;
+  --foreground: #1a2430;
+  --card: #ffffff;
+  --muted: #e7eef6;
+  --border: rgba(11, 31, 58, 0.12);
+  --ring: #c59b27;
+  --primary: #0b1f3a;
+  --primary-foreground: #ffffff;
+  --accent: #c59b27;
+  --accent-foreground: #0b1f3a;
+}
+
+html[data-theme="festive"] .ops-shell {
+  --color-forest: #8b0000;
+  --color-forest-rgb: 139 0 0;
+  --color-forest-light: #a31212;
+  --color-forest-light-rgb: 163 18 18;
+  --color-forest-mist: #f8eaea;
+  --color-forest-mist-rgb: 248 234 234;
+  --color-brass: #d4af37;
+  --color-brass-rgb: 212 175 55;
+  --color-brass-soft: #e8d07a;
+  --color-brass-soft-rgb: 232 208 122;
+  --color-ink: #2c1616;
+  --color-ink-rgb: 44 22 22;
+  --color-paper: #fffdf8;
+  --color-paper-rgb: 255 253 248;
+  --background: #f8eaea;
+  --foreground: #2c1616;
+  --card: #fffdf8;
+  --muted: #f8eaea;
+  --border: rgba(139, 0, 0, 0.14);
+  --ring: #d4af37;
+  --primary: #8b0000;
+  --primary-foreground: #fffdf8;
+  --accent: #d4af37;
+  --accent-foreground: #8b0000;
+}
+
+html[data-theme="teal"] .ops-shell {
+  --color-forest: #005f73;
+  --color-forest-rgb: 0 95 115;
+  --color-forest-light: #0a7a90;
+  --color-forest-light-rgb: 10 122 144;
+  --color-forest-mist: #e6f4f5;
+  --color-forest-mist-rgb: 230 244 245;
+  --color-brass: #0a9396;
+  --color-brass-rgb: 10 147 150;
+  --color-brass-soft: #94d2bd;
+  --color-brass-soft-rgb: 148 210 189;
+  --color-ink: #001219;
+  --color-ink-rgb: 0 18 25;
+  --color-paper: #ffffff;
+  --color-paper-rgb: 255 255 255;
+  --background: #e6f4f5;
+  --foreground: #001219;
+  --card: #ffffff;
+  --muted: #e6f4f5;
+  --border: rgba(0, 95, 115, 0.14);
+  --ring: #0a9396;
+  --primary: #005f73;
+  --primary-foreground: #ffffff;
+  --accent: #0a9396;
+  --accent-foreground: #ffffff;
+}
+
+@layer base {
+  html {
+    scroll-behavior: auto;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    min-width: 0;
+    min-height: 100dvh;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-body);
+  }
+
+  body::before {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    opacity: 0.045;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  }
+
+  html:has(.ops-shell) body::before {
+    content: none;
+  }
+
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  img:not([data-nimg="fill"]),
+  video {
+    height: auto;
+  }
+
+  .media-frame {
+    @apply relative w-full overflow-hidden bg-forest-mist;
+  }
+
+  .media-frame--card {
+    @apply mx-auto aspect-square w-[min(100%,14rem)] sm:w-[min(100%,15rem)] lg:w-[min(100%,16rem)];
+  }
+
+  .media-frame--product {
+    @apply mx-auto aspect-square w-[min(100%,20rem,42dvh)] sm:w-[min(100%,22rem)] lg:w-[min(100%,24rem)];
+  }
+
+  .media-frame--tile {
+    @apply aspect-[4/3] max-h-[13rem] sm:max-h-none;
+  }
+
+  .media-frame--wide {
+    @apply aspect-[16/10] max-h-[12.5rem] sm:max-h-none;
+  }
+
+  .media-frame--hero {
+    @apply aspect-[4/3] max-h-[16rem] sm:max-h-[18rem] lg:max-h-[20rem];
+  }
+
+  .media-frame--cover {
+    @apply mt-8 aspect-[16/9] max-h-[16rem] sm:max-h-[18rem] lg:max-h-[20rem];
+  }
+
+  .media-frame--thumb {
+    @apply aspect-square;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-geist), var(--font-sarabun), sans-serif;
+    letter-spacing: var(--letter-spacing-display);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+  }
+}
+
+/* Storefront headings that use text-forest stay readable in dark mode.
+   Ops resets via higher-specificity .ops-shell rules. */
+html.dark .hover\:text-forest:hover,
+html.dark .group-hover\:text-forest:hover,
+html.dark .group:hover .group-hover\:text-forest {
+  color: #ffd8c4;
+}
+
+html.dark[data-theme="navy"] .text-forest {
+  color: #d5e4f4;
+}
+
+html.dark[data-theme="festive"] .text-forest {
+  color: #f3d4d4;
+}
+
+html.dark[data-theme="teal"] .text-forest {
+  color: #c5ebea;
+}
+
+html.dark .ops-shell .text-forest {
+  color: rgb(var(--color-forest-rgb) / 1);
+}
+
+@layer components {
+  .prose-custom {
+    @apply text-ink leading-relaxed;
+  }
+
+  .prose-custom h2 {
+    @apply mt-8 mb-3 text-2xl font-bold text-forest;
+  }
+
+  .prose-custom h3 {
+    @apply mt-6 mb-2 text-xl font-semibold text-forest;
+  }
+
+  .prose-custom h4 {
+    @apply mt-5 mb-2 text-lg font-semibold text-forest;
+  }
+
+  .prose-custom p {
+    @apply mb-4 text-base text-ink/85;
+  }
+
+  .prose-custom blockquote {
+    @apply my-4 border-l-4 border-brass bg-forest-mist/60 py-3 pl-4 pr-3 text-ink/80 italic;
+  }
+
+  .prose-custom ul {
+    @apply mb-4 list-disc space-y-1 pl-5;
+  }
+
+  .prose-custom ol {
+    @apply mb-4 list-decimal space-y-1 pl-5;
+  }
+
+  .prose-custom li {
+    @apply mb-2 text-ink/85;
+  }
+
+  .prose-custom a {
+    @apply font-medium text-forest underline underline-offset-2 hover:text-brass;
+  }
+
+  .prose-custom strong {
+    @apply font-semibold text-forest;
+  }
+
+  .prose-custom code {
+    @apply rounded bg-forest-mist px-1.5 py-0.5 font-mono text-sm text-forest;
+  }
+
+  .prose-custom table {
+    @apply my-4 w-full border-collapse text-sm;
+  }
+
+  .prose-custom th,
+  .prose-custom td {
+    @apply border border-forest/15 px-3 py-2 text-left;
+  }
+
+  .bg-premium-mesh {
+    background-color: var(--background);
+    background-image:
+      radial-gradient(
+        900px 420px at 8% -12%,
+        color-mix(in srgb, var(--color-brass) 16%, transparent),
+        transparent 52%
+      ),
+      radial-gradient(
+        640px 280px at 100% 0%,
+        color-mix(in srgb, var(--color-forest) 8%, transparent),
+        transparent 48%
+      ),
+      radial-gradient(
+        520px 280px at 70% 110%,
+        color-mix(in srgb, var(--color-brass) 8%, transparent),
+        transparent 58%
+      );
+  }
+
+  .flipbook-frame {
+    @apply relative w-full overflow-hidden rounded-2xl border border-forest/10 bg-paper shadow-sm;
+  }
+
+  .flipbook-frame__ratio {
+    @apply relative aspect-[3/4] w-full max-h-[min(52dvh,22rem)] sm:max-h-[min(56dvh,26rem)] sm:aspect-[4/5] lg:aspect-[16/10] lg:max-h-[min(58dvh,28rem)];
+  }
+
+  .glass-panel {
+    @apply border border-white/20 bg-paper/75 shadow-glass backdrop-blur-md dark:border-white/10 dark:bg-forest/50;
+  }
+
+  .surface-card {
+    @apply rounded-2xl border border-forest/10 bg-paper/90 shadow-sm backdrop-blur-md dark:border-white/10;
+  }
+
+  .h-scroll {
+    @apply flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  body::before {
+    content: none !important;
+  }
+
+  .document-sheet {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  .document-sheet {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .px-page {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .px-page {
+      padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  .table-scroll {
+    @apply w-full min-w-0 overflow-x-auto overscroll-x-contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ops left rail: keep a visible thin scrollbar on short laptop screens */
+  .ops-sidebar-scroll {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.35) transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ops-sidebar-scroll::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+
+  .ops-sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .ops-sidebar-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.35);
+  }
+
+  .ops-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgb(255 255 255 / 0.55);
+  }
+
+  .touch-target {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  /* Room for MobileStickyCta on small screens (bar ~3.5rem + safe area) */
+  .pb-mobile-cta {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 1024px) {
+    .pb-mobile-cta {
+      padding-bottom: 0;
+    }
+  }
+}

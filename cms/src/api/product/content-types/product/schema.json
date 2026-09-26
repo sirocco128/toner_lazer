@@ -1,0 +1,103 @@
+{
+  "kind": "collectionType",
+  "collectionName": "products",
+  "info": {
+    "singularName": "product",
+    "pluralName": "products",
+    "displayName": "Product",
+    "description": "Premium gift set product catalog entry"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "description": {
+      "type": "richtext",
+      "required": true
+    },
+    "material": {
+      "type": "string"
+    },
+    "minOrder": {
+      "type": "integer",
+      "default": 30,
+      "min": 1
+    },
+    "priceRange": {
+      "type": "string"
+    },
+    "images": {
+      "type": "media",
+      "multiple": true,
+      "required": true,
+      "allowedTypes": ["images"]
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::gift-set-category.gift-set-category",
+      "inversedBy": "products"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo",
+      "required": true
+    },
+    "priceMin": {
+      "type": "decimal",
+      "min": 0
+    },
+    "priceMax": {
+      "type": "decimal",
+      "min": 0
+    },
+    "currency": {
+      "type": "enumeration",
+      "enum": ["THB"],
+      "default": "THB"
+    },
+    "sourcePlatform": {
+      "type": "enumeration",
+      "enum": ["cms", "alibaba1688"],
+      "default": "cms"
+    },
+    "sourceOfferId": {
+      "type": "string"
+    },
+    "enableCustomDesign": {
+      "type": "boolean",
+      "default": false
+    },
+    "customDesignPreset": {
+      "type": "enumeration",
+      "enum": ["tumbler_set", "product_photo"],
+      "default": "product_photo"
+    },
+    "priceExFreightMin": {
+      "type": "decimal",
+      "min": 0
+    },
+    "priceExFreightMax": {
+      "type": "decimal",
+      "min": 0
+    },
+    "packagingMin": {
+      "type": "decimal",
+      "min": 0
+    },
+    "packagingMax": {
+      "type": "decimal",
+      "min": 0
+    }
+  }
+}

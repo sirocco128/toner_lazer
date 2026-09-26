@@ -1,0 +1,310 @@
+# Portainer stack (NAS 192.168.1.30)
+# Repo: http://192.168.1.30:3000/tong/mcp-alibaba.git
+# Compose path: docker-compose.portainer.yml
+# Public site: https://smartgift.next-dev.net (Cloudflare Tunnel)
+#
+# LAN (do not bind :3000 — Gitea already uses it):
+#   web     http://192.168.1.30:33100
+#   cms     http://192.168.1.30:33137/admin
+#   minio   http://192.168.1.30:33921
+#
+# Tunnel (optional): enable profile `tunnel` and set TUNNEL_TOKEN in Portainer.
+# ClamAV (optional): enable profile `vault`.
+
+name: tarabiz
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-giftset}
+      POSTGRES_USER: ${POSTGRES_USER:-giftset}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-giftset}
+    volumes:
+      - tarabiz_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-giftset} -d ${POSTGRES_DB:-giftset}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    ports:
+      - "${SMARTGIFT_MYSQL_PUBLISH_PORT:-3307}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SMARTGIFT_MYSQL_PASSWORD:-biz_secret}
+      MYSQL_DATABASE: ${SMARTGIFT_MYSQL_DATABASE:-smartgift}
+      MYSQL_USER: ${SMARTGIFT_MYSQL_USER:-biz}
+      MYSQL_PASSWORD: ${SMARTGIFT_MYSQL_PASSWORD:-biz_secret}
+    volumes:
+      - tarabiz_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u${SMARTGIFT_MYSQL_USER:-biz}", "-p${SMARTGIFT_MYSQL_PASSWORD:-biz_secret}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_HOST_API_PORT:-33920}:9000"
+      - "${MINIO_HOST_CONSOLE_PORT:-33921}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-terabis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-terabisMinioDev1}
+      MINIO_KMS_SECRET_KEY: "${MINIO_KMS_SECRET_KEY:-giftset-dev:ymytN68ifaCKY+kmOVGz98/wmv+ogeEGFz8sKs/SjoA=}"
+    volumes:
+      - tarabiz_minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    restart: on-failure
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-terabis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-terabisMinioDev1}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-giftset-app}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-giftsetAppDevKey1}
+      MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE:-terabis-private}
+      MINIO_BUCKET_PUBLIC: ${MINIO_BUCKET_PUBLIC:-terabis-public}
+      MINIO_BUCKET_CONFIDENTIAL: ${MINIO_BUCKET_CONFIDENTIAL:-terabis-confidential}
+      MINIO_BUCKET_RESTRICTED: ${MINIO_BUCKET_RESTRICTED:-terabis-restricted}
+      MINIO_RETENTION_DAYS: ${MINIO_RETENTION_DAYS:-1825}
+    volumes:
+      - ./scripts/minio-init.sh:/init.sh:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "tr -d '\\r' < /init.sh > /tmp/init-lf.sh && exec /bin/sh /tmp/init-lf.sh"
+
+  minio-replica:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_REPLICA_API_PORT:-33922}:9000"
+      - "${MINIO_REPLICA_CONSOLE_PORT:-33923}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-terabis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-terabisMinioDev1}
+      MINIO_KMS_SECRET_KEY: "${MINIO_KMS_SECRET_KEY:-giftset-dev:ymytN68ifaCKY+kmOVGz98/wmv+ogeEGFz8sKs/SjoA=}"
+    volumes:
+      - tarabiz_minio_replica:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  minio-mirror:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+      - minio-replica
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-terabis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-terabisMinioDev1}
+      MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE:-terabis-private}
+      MINIO_BUCKET_PUBLIC: ${MINIO_BUCKET_PUBLIC:-terabis-public}
+      MINIO_BUCKET_CONFIDENTIAL: ${MINIO_BUCKET_CONFIDENTIAL:-terabis-confidential}
+      MINIO_BUCKET_RESTRICTED: ${MINIO_BUCKET_RESTRICTED:-terabis-restricted}
+    volumes:
+      - ./scripts/minio-mirror.sh:/mirror.sh:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "tr -d '\\r' < /mirror.sh > /tmp/mirror-lf.sh && exec /bin/sh /tmp/mirror-lf.sh"
+
+  cms:
+    build:
+      context: ./cms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${CMS_HOST_PORT:-33137}:1337"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 1337
+      NODE_ENV: production
+      APP_KEYS: ${CMS_APP_KEYS:-toBeModified1,toBeModified2,toBeModified3,toBeModified4}
+      API_TOKEN_SALT: ${CMS_API_TOKEN_SALT:-tobemodified}
+      ADMIN_JWT_SECRET: ${CMS_ADMIN_JWT_SECRET:-tobemodified}
+      TRANSFER_TOKEN_SALT: ${CMS_TRANSFER_TOKEN_SALT:-tobemodified}
+      ENCRYPTION_KEY: ${CMS_ENCRYPTION_KEY:-tobemodified}
+      JWT_SECRET: ${CMS_JWT_SECRET:-tobemodified}
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB:-giftset}
+      DATABASE_USERNAME: ${POSTGRES_USER:-giftset}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-giftset}
+      DATABASE_SSL: "false"
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-giftset-app}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-giftsetAppDevKey1}
+      MINIO_BUCKET_PUBLIC: ${MINIO_BUCKET_PUBLIC:-terabis-public}
+      MINIO_REGION: us-east-1
+      MINIO_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL:-http://192.168.1.30:33920/terabis-public}
+      MINIO_CMS_ROOT: cms
+    volumes:
+      - tarabiz_cms_uploads:/opt/app/public/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    restart: "no"
+    environment:
+      SQLITE_PATH: /app/.data/leads.sqlite
+      SMARTGIFT_MYSQL_ENABLED: ${SMARTGIFT_MYSQL_ENABLED:-true}
+      SMARTGIFT_MYSQL_HOST: ${SMARTGIFT_MYSQL_HOST:-mysql}
+      SMARTGIFT_MYSQL_PORT: ${SMARTGIFT_MYSQL_PORT:-3306}
+      SMARTGIFT_MYSQL_USER: ${SMARTGIFT_MYSQL_USER:-biz}
+      SMARTGIFT_MYSQL_PASSWORD: ${SMARTGIFT_MYSQL_PASSWORD:-biz_secret}
+      SMARTGIFT_MYSQL_DATABASE: ${SMARTGIFT_MYSQL_DATABASE:-smartgift}
+    volumes:
+      - tarabiz_leads:/app/.data
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://smartgift.next-dev.net}
+        NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-Smart Gift}
+        NEXT_PUBLIC_SITE_DESCRIPTION: ${NEXT_PUBLIC_SITE_DESCRIPTION:-รับผลิตของขวัญองค์กรและสินค้าพรีเมียม สกรีนโลโก้ได้}
+        NEXT_PUBLIC_ALLOW_INDEXING: "false"
+        NEXT_PUBLIC_ENABLE_BUYER_ASSISTANT: "true"
+        NEXT_PUBLIC_TAIP_WIDGET: "false"
+        CMS_MODE: ${CMS_MODE:-mock}
+        STRAPI_URL: http://cms:1337
+        STRAPI_FALLBACK_TO_MOCK: "true"
+        NEXT_IMAGE_REMOTE_URLS: ${NEXT_IMAGE_REMOTE_URLS:-http://192.168.1.30:33920,https://smartgift.next-dev.net}
+    restart: unless-stopped
+    ports:
+      - "${WEB_HOST_PORT:-33100}:3000"
+    environment:
+      NODE_ENV: production
+      RUN_DB_MIGRATIONS: "true"
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://smartgift.next-dev.net}
+      NEXT_PUBLIC_ALLOW_INDEXING: "false"
+      CMS_MODE: ${CMS_MODE:-mock}
+      STRAPI_URL: http://cms:1337
+      STRAPI_ADMIN_URL: ${STRAPI_ADMIN_URL:-http://192.168.1.30:33137/admin}
+      STRAPI_API_TOKEN: ${STRAPI_API_TOKEN:-}
+      STRAPI_PUBLIC_READ: ${STRAPI_PUBLIC_READ:-false}
+      STRAPI_FALLBACK_TO_MOCK: "true"
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-giftset-app}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-giftsetAppDevKey1}
+      MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE:-terabis-private}
+      MINIO_BUCKET_PUBLIC: ${MINIO_BUCKET_PUBLIC:-terabis-public}
+      MINIO_BUCKET_CONFIDENTIAL: ${MINIO_BUCKET_CONFIDENTIAL:-terabis-confidential}
+      MINIO_BUCKET_RESTRICTED: ${MINIO_BUCKET_RESTRICTED:-terabis-restricted}
+      MINIO_REGION: us-east-1
+      MINIO_USE_SSL: "false"
+      MINIO_SSE: AES256
+      MINIO_OBJECT_LOCK: "1"
+      MINIO_RETENTION_DAYS: ${MINIO_RETENTION_DAYS:-1825}
+      MINIO_SIGNED_URL_TTL: "300"
+      MINIO_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL:-http://192.168.1.30:33920/terabis-public}
+      MINIO_REPLICA_ENDPOINT: http://minio-replica:9000
+      LEAD_STORAGE_MODE: sqlite
+      SQLITE_PATH: /app/.data/leads.sqlite
+      IP_HASH_SECRET: ${IP_HASH_SECRET:-replace-with-at-least-32-random-characters}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-replace-with-at-least-32-random-characters}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin}
+      ADMIN_NAME: ${ADMIN_NAME:-}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-Admin1234}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-}
+      OPS_USERS: ${OPS_USERS:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_HOSTED_DOMAIN: ${GOOGLE_HOSTED_DOMAIN:-}
+      GOOGLE_ALLOWED_DOMAINS: ${GOOGLE_ALLOWED_DOMAINS:-}
+      SMARTGIFT_MYSQL_ENABLED: ${SMARTGIFT_MYSQL_ENABLED:-true}
+      SMARTGIFT_MYSQL_HOST: ${SMARTGIFT_MYSQL_HOST:-mysql}
+      SMARTGIFT_MYSQL_PORT: ${SMARTGIFT_MYSQL_PORT:-3306}
+      SMARTGIFT_MYSQL_USER: ${SMARTGIFT_MYSQL_USER:-biz}
+      SMARTGIFT_MYSQL_PASSWORD: ${SMARTGIFT_MYSQL_PASSWORD:-biz_secret}
+      SMARTGIFT_MYSQL_DATABASE: ${SMARTGIFT_MYSQL_DATABASE:-smartgift}
+      TRANTECH_INTERNAL_API_URL: ${TRANTECH_INTERNAL_API_URL:-http://192.168.1.35:8100}
+      TRANTECH_INTERNAL_API_TOKEN: ${TRANTECH_INTERNAL_API_TOKEN:-phase1-internal-api-token}
+      TRANTECH_ROOT: ${TRANTECH_ROOT:-}
+    volumes:
+      - tarabiz_leads:/app/.data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      minio-replica:
+        condition: service_started
+      cms:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      web:
+        condition: service_started
+
+  clamav:
+    image: clamav/clamav:1.4
+    profiles: ["vault"]
+    restart: unless-stopped
+    ports:
+      - "${CLAMD_HOST_PORT:-13310}:3310"
+    volumes:
+      - tarabiz_clamav:/var/lib/clamav
+
+volumes:
+  tarabiz_pgdata:
+  tarabiz_mysql:
+  tarabiz_leads:
+  tarabiz_minio:
+  tarabiz_minio_replica:
+  tarabiz_cms_uploads:
+  tarabiz_clamav:

@@ -46,6 +46,9 @@ export function buildOpsNavLinks(actor: OpsActor): OpsNavLink[] {
   if (actorMay(actor, "reports.read")) {
     links.push({ href: "/ops/reports", label: "รายงาน", group: "finance" });
   }
+  if (actorMay(actor, "finance.read")) {
+    links.push({ href: "/ops/receivables", label: "ลูกหนี้ค้างชำระ", group: "finance" });
+  }
   links.push(
     { href: "/ops/quotes", label: "ใบเสนอราคา", group: "sales" },
     { href: "/ops/inquiries", label: "ข้อความติดต่อ", group: "sales" },

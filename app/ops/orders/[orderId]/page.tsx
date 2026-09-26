@@ -164,6 +164,14 @@ export default async function OpsOrderDetailPage({
             {formatThb(order.paidAmount)}
           </dd>
         </div>
+        {order.depositMode === "credit" ? (
+          <div>
+            <dt className="text-xs text-ink/55">เครดิต / ครบกำหนดชำระ</dt>
+            <dd>
+              {order.creditDays} วัน / {order.dueDate ?? "วางบิลเมื่อส่งของ"}
+            </dd>
+          </div>
+        ) : null}
       </dl>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-2">

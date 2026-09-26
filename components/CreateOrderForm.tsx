@@ -8,6 +8,7 @@ import type { OpsActionResult } from "@/app/actions/ops";
 import { ThaiAddressFields } from "@/components/ThaiAddressFields";
 import type { ThaiMailingParts } from "@/lib/thai-address-format";
 import {
+  CREDIT_DAY_OPTIONS,
   calculateDepositPlan,
   formatThb,
   splitVat,
@@ -54,10 +55,11 @@ export function CreateOrderForm({
   );
   const [amount, setAmount] = useState("");
   const [vatMode, setVatMode] = useState<"exclusive" | "inclusive">("exclusive");
-  const [depositMode, setDepositMode] = useState<"auto" | "percent" | "full">(
+  const [depositMode, setDepositMode] = useState<"auto" | "percent" | "full" | "credit">(
     "auto",
   );
   const [percent, setPercent] = useState("50");
+  const [creditDays, setCreditDays] = useState("30");
   const [shipTo, setShipTo] = useState<ThaiMailingParts>({
     streetAddress: shipToStreetAddress,
     province: shipToProvince,
@@ -75,12 +77,13 @@ export function CreateOrderForm({
         grandTotal: vat.grandTotal,
         mode: depositMode,
         percent: Number(percent) || 50,
+        creditDays: Number(creditDays) || 30,
       });
       return { vat, deposit };
     } catch {
       return null;
     }
-  }, [amount, vatMode, depositMode, percent]);
+  }, [amount, vatMode, depositMode, percent, creditDays]);
 
   return (
     <form action={action} className="mt-6 space-y-4 rounded border border-forest/15 bg-paper p-4">
@@ -123,15 +126,34 @@ export function CreateOrderForm({
           name="depositMode"
           value={depositMode}
           onChange={(e) =>
-            setDepositMode(e.target.value as "auto" | "percent" | "full")
+            setDepositMode(e.target.value as "auto" | "percent" | "full" | "credit")
           }
           className="mt-1 w-full rounded border border-forest/20 px-3 py-2"
         >
           <option value="auto">ให้ระบบคำนวณ (≤ 10,000 บาท เก็บเต็ม / เกินนั้นมัดจำ 50%)</option>
           <option value="percent">กำหนดเปอร์เซ็นต์เอง</option>
           <option value="full">เก็บเต็มจำนวน</option>
+          <option value="credit">ขายเชื่อ / เครดิต (หน่วยงานรัฐ องค์กร) — ไม่เก็บมัดจำ</option>
         </select>
       </label>
+
+      {depositMode === "credit" ? (
+        <label className="block text-sm">
+          <span className="font-medium">เครดิต (วันนับจากวันส่งของ)</span>
+          <select
+            name="creditDays"
+            value={creditDays}
+            onChange={(e) => setCreditDays(e.target.value)}
+            className="mt-1 w-full rounded border border-forest/20 px-3 py-2"
+          >
+            {CREDIT_DAY_OPTIONS.map((d) => (
+              <option key={d} value={String(d)}>
+                {d} วัน
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
 
       {depositMode === "percent" ? (
         <label className="block text-sm">
@@ -244,7 +266,7 @@ export function CreateOrderForm({
           </div>
           <div className="flex justify-between">
             <dt>
-              {preview.deposit.collectFull ? "เก็บเต็มจำนวน" : `มัดจำ ${preview.deposit.appliedPercent}%`}
+              {preview.deposit.mode === "credit" ? "ขายเชื่อ ไม่เก็บมัดจำ" : preview.deposit.collectFull ? "เก็บเต็มจำนวน" : `มัดจำ ${preview.deposit.appliedPercent}%`}
             </dt>
             <dd>{formatThb(preview.deposit.depositAmount)}</dd>
           </div>

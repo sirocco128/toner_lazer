@@ -12,9 +12,19 @@ B2B Portal + backoffice สำหรับธุรกิจตลับหม�
 | ค้นหาตลับจากรุ่นเครื่องพิมพ์ / รหัสตลับ | ✅ `findToner()` |
 | ส่งหมวดและสินค้าเข้า NEXTERP (MySQL) | ✅ `npm run toner:nexterp` |
 | แสดงสินค้าโทนเนอร์จาก NEXTERP บนเว็บ (ราคาเดียว, สั่งขั้นต่ำ 1 ตลับ) | ✅ `lib/nexterp-products.ts` |
-| ตัดโมดูลของขวัญ (mockup, สกรีนโลโก้, 1688) และเปลี่ยนแบรนด์ | ⏳ ถัดไป |
-| Dropship PO ไป Color Fly, เครดิตภาครัฐ 30–90 วัน, Tender Tracker (e-GP) | ⏳ ถัดไป |
+| หน้าเว็บเปลี่ยนเป็น Toner Lazer + หน้าค้นหาหมึกตามรุ่นเครื่อง `/toner` | ✅ หน้าของขวัญเดิม redirect ไป `/toner` |
+| ใบสั่งส่งตรง (dropship) ไป Color Fly `/ops/dropship` + CSV | ✅ |
+| ขายเชื่อ/เครดิตภาครัฐ (ไม่เก็บมัดจำ, วางบิลและออกใบกำกับภาษีเมื่อส่งของ) | ✅ วิธีชำระ "credit" ในหน้าเปิดออเดอร์ |
+| รายงานลูกหนี้ตามอายุหนี้ `/ops/receivables` | ✅ |
+| โมดูลของขวัญในหลังบ้าน (mockup, 1688, ผู้ช่วย AI, ฉลาก Smart Gift ใน ops) | ⏳ ยังอยู่ ซ่อนจากหน้าเว็บแล้ว |
+| Tender Tracker (e-GP), SNMP monitoring, Cost-per-Page | ⏳ เฟสถัดไป |
 | ย้ายฐานข้อมูลหลักจาก SQLite ไป MySQL | ⏳ ก่อนขึ้น production |
+
+## ก่อนขึ้น production
+
+- ตั้ง `COMPANY_LEGAL_NAME`, `COMPANY_TAX_ID`, `COMPANY_STREET_ADDRESS` ฯลฯ เป็นนิติบุคคลที่ขายหมึกจริง — ถ้าไม่ตั้ง ใบกำกับภาษีจะออกในนามบริษัท เทราบิส จำกัด (ค่าเดิมของโปรเจกต์ต้นทาง)
+- ปิดบัญชีเดโมใน `/ops/login`: โค้ดต้นทางสร้างผู้ใช้ superadmin/admin/sales ฯลฯ ด้วยรหัส `Admin1234` อัตโนมัติ เมื่อ `DEMO_ADMIN_PASSWORD` ว่าง ให้ตั้ง `DEMO_ADMIN_PASSWORD` และ `SUPERADMIN_PASSWORD` เป็นรหัสที่แข็งแรง หรือจัดการผู้ใช้ผ่านเมนูผู้ใช้/สิทธิ์
+- `npm run db:migrate` เพื่อเพิ่มตาราง dropship (031) และคอลัมน์เครดิต (032)
 
 ## ต้นทุนและราคา
 

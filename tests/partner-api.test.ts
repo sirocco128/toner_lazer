@@ -282,6 +282,8 @@ describe("partner-api contract", () => {
       depositAmount: 535,
       remainingAmount: 535,
       paidAmount: 0,
+      creditDays: 0,
+      dueDate: null,
       paymentStatus: "deposit_due",
       fulfillmentStatus: "reserved",
       accessToken: "leak-token",

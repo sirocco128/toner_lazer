@@ -11,8 +11,18 @@ export const FULL_PAYMENT_THRESHOLD_THB = 10_000;
 export const VAT_MODES = ["exclusive", "inclusive"] as const;
 export type VatMode = (typeof VAT_MODES)[number];
 
-export const DEPOSIT_MODES = ["auto", "percent", "full"] as const;
+export const DEPOSIT_MODES = ["auto", "percent", "full", "credit"] as const;
 export type DepositMode = (typeof DEPOSIT_MODES)[number];
+
+/** Credit terms for government / corporate buyers (days after delivery). */
+export const CREDIT_DAY_OPTIONS = [7, 15, 30, 45, 60, 90] as const;
+export const DEFAULT_CREDIT_DAYS = 30;
+
+export function normalizeCreditDays(value: unknown): number {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_CREDIT_DAYS;
+  return Math.min(n, 180);
+}
 
 export type VatBreakdown = {
   vatMode: VatMode;
@@ -75,9 +85,22 @@ export function calculateDepositPlan(input: {
   mode: DepositMode;
   percent?: number;
   fullPaymentThreshold?: number;
+  creditDays?: number;
 }): DepositPlan {
   const grand = roundSatang(input.grandTotal);
   if (!(grand > 0)) throw new Error("invalid_amount");
+
+  if (input.mode === "credit") {
+    const days = normalizeCreditDays(input.creditDays);
+    return {
+      mode: input.mode,
+      appliedPercent: 0,
+      collectFull: false,
+      depositAmount: 0,
+      remainingAmount: grand,
+      reason: `เครดิต ${days} วันนับจากวันส่งของ ไม่เก็บมัดจำ วางบิลเมื่อส่งของแล้ว`,
+    };
+  }
   const threshold = input.fullPaymentThreshold ?? FULL_PAYMENT_THRESHOLD_THB;
   const requested = input.percent ?? DEFAULT_DEPOSIT_PERCENT;
 

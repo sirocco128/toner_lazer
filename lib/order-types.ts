@@ -120,11 +120,15 @@ export type OrderRecord = {
   subtotalExVat: number;
   vatAmount: number;
   totalAmount: number;
-  depositMode: "auto" | "percent" | "full";
+  depositMode: "auto" | "percent" | "full" | "credit";
   depositPercent: number;
   depositAmount: number;
   remainingAmount: number;
   paidAmount: number;
+  /** Credit days after delivery (depositMode "credit"); 0 for cash orders. */
+  creditDays: number;
+  /** Payment due date (YYYY-MM-DD, Bangkok) set when a credit order is delivered. */
+  dueDate: string | null;
   paymentStatus: PaymentStatus;
   fulfillmentStatus: FulfillmentStatus;
   accessToken: string;

@@ -44,6 +44,8 @@ type OrderRow = {
   deposit_amount: number;
   remaining_amount: number;
   paid_amount: number;
+  credit_days?: number | null;
+  due_date?: string | null;
   payment_status: string;
   fulfillment_status: string;
   access_token: string;
@@ -122,6 +124,8 @@ function mapOrder(row: OrderRow): OrderRecord {
     depositAmount: row.deposit_amount,
     remainingAmount: row.remaining_amount,
     paidAmount: row.paid_amount,
+    creditDays: Number(row.credit_days ?? 0),
+    dueDate: row.due_date ?? null,
     paymentStatus: row.payment_status as PaymentStatus,
     fulfillmentStatus: row.fulfillment_status as FulfillmentStatus,
     accessToken: row.access_token,
@@ -176,8 +180,8 @@ function mapDocument(row: DocumentRow): BillingDocumentRecord {
 
 export type InsertOrderParams = Omit<
   OrderRecord,
-  "id" | "createdAt" | "updatedAt" | "tags"
-> & { createdAt: string; tags?: string[] };
+  "id" | "createdAt" | "updatedAt" | "tags" | "creditDays" | "dueDate"
+> & { createdAt: string; tags?: string[]; creditDays?: number; dueDate?: string | null };
 
 export type ListOrdersOptions = {
   q?: string;
@@ -237,6 +241,7 @@ export class SqliteOrderRepository {
         product_summary, quantity, currency, vat_rate, vat_mode,
         subtotal_ex_vat, vat_amount, total_amount,
         deposit_mode, deposit_percent, deposit_amount, remaining_amount, paid_amount,
+        credit_days, due_date,
         payment_status, fulfillment_status, access_token, notes, created_at, updated_at
       ) VALUES (
         ?, ?, ?, ?, ?, ?, ?,
@@ -245,6 +250,7 @@ export class SqliteOrderRepository {
         ?, ?, ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?, ?, ?,
+        ?, ?,
         ?, ?, ?, ?, ?, ?
       )`,
     ).run(
@@ -276,6 +282,8 @@ export class SqliteOrderRepository {
       params.depositAmount,
       params.remainingAmount,
       params.paidAmount,
+      params.creditDays ?? 0,
+      params.dueDate ?? null,
       params.paymentStatus,
       params.fulfillmentStatus,
       params.accessToken,
@@ -436,6 +444,25 @@ export class SqliteOrderRepository {
         `UPDATE orders SET fulfillment_status = ?, updated_at = ? WHERE order_id = ?`,
       )
       .run(status, now, orderId);
+  }
+
+  setDueDate(orderId: string, dueDate: string | null): void {
+    getDb()
+      .prepare(`UPDATE orders SET due_date = ?, updated_at = ? WHERE order_id = ?`)
+      .run(dueDate, new Date().toISOString(), orderId);
+  }
+
+  /** Unpaid, not cancelled orders for the receivables report. */
+  listOpenReceivables(limit = 500): OrderRecord[] {
+    const rows = getDb()
+      .prepare(
+        `SELECT * FROM orders
+         WHERE payment_status != 'paid' AND fulfillment_status != 'cancelled'
+         ORDER BY COALESCE(due_date, '9999-12-31') ASC, created_at ASC
+         LIMIT ?`,
+      )
+      .all(Math.min(Math.max(limit, 1), 2000)) as unknown as OrderRow[];
+    return rows.map(mapOrder);
   }
 
   updatePaymentStatus(orderId: string, paymentStatus: PaymentStatus): void {

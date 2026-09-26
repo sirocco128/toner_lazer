@@ -26,8 +26,12 @@ import { bangkokDateYmd } from "@/lib/bangkok-date";
 import { bahtText } from "@/lib/th-baht-text";
 import { composeOrderShipTo, quoteShipToParts } from "@/lib/thai-address-format";
 import { shipFromStock } from "@/lib/wms-service";
+import { getDb } from "@/lib/database";
+import { computeDueDate } from "@/lib/receivables";
 import {
+  DEFAULT_CREDIT_DAYS,
   calculateDepositPlan,
+  normalizeCreditDays,
   normalizeThaiTaxId,
   roundSatang,
   splitVat,
@@ -46,6 +50,8 @@ export type CreateOrderFromQuoteInput = {
   vatMode?: VatMode;
   depositMode?: DepositMode;
   depositPercent?: number;
+  /** Used when depositMode is "credit"; defaults to the customer's terms or 30. */
+  creditDays?: number;
   productSummary?: string;
   quantity?: number;
   billingName?: string;
@@ -169,10 +175,84 @@ function createOpenPayment(order: OrderRecord, kind: PaymentKind, amount: number
   });
 }
 
+/** Customer default credit days (0 when not set or the column is missing). */
+function customerCreditDays(customerId: number | null): number {
+  if (!customerId) return 0;
+  try {
+    const row = getDb()
+      .prepare("SELECT credit_days FROM customers WHERE id = ?")
+      .get(customerId) as { credit_days?: number } | undefined;
+    return Number(row?.credit_days ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Credit orders: tax point is delivery, so the tax invoice is issued when the
+ * goods go out (paid or not) and the receipt only once payment is complete.
+ */
+function maybeIssueCreditTaxInvoice(fresh: OrderRecord, now: string, actor: string | null): void {
+  const repo = getOrderRepository();
+  const delivered =
+    fresh.fulfillmentStatus === "out_for_delivery" || fresh.fulfillmentStatus === "delivered";
+  if (!delivered) return;
+  if (!repo.hasDocument(fresh.orderId, "tax_invoice")) {
+    issueDocument({
+      type: "tax_invoice",
+      order: fresh,
+      paymentId: null,
+      subtotalExVat: fresh.subtotalExVat,
+      vatAmount: fresh.vatAmount,
+      grandTotal: fresh.totalAmount,
+      lineDescription: `${fresh.productSummary} จำนวน ${fresh.quantity}`,
+      now,
+    });
+    repo.insertEvent({
+      orderId: fresh.orderId,
+      eventType: "document_issued",
+      message: `ออกใบกำกับภาษีเมื่อส่งมอบสินค้า (ขายเชื่อ ครบกำหนด ${fresh.dueDate ?? "-"}) · ${sellerLine()}`,
+      actor,
+      createdAt: now,
+    });
+  }
+  if (fresh.paymentStatus === "paid" && !repo.hasDocument(fresh.orderId, "receipt")) {
+    issueDocument({
+      type: "receipt",
+      order: fresh,
+      paymentId: null,
+      subtotalExVat: fresh.subtotalExVat,
+      vatAmount: fresh.vatAmount,
+      grandTotal: fresh.totalAmount,
+      lineDescription: `รับชำระค่าสินค้าครบจำนวน — ${fresh.productSummary}`,
+      now,
+    });
+    repo.insertEvent({
+      orderId: fresh.orderId,
+      eventType: "document_issued",
+      message: "รับชำระครบ — ออกใบเสร็จรับเงิน",
+      actor,
+      createdAt: now,
+    });
+  }
+  postRevenueRecognition({
+    orderId: fresh.orderId,
+    subtotalExVat: fresh.subtotalExVat,
+    vatAmount: fresh.vatAmount,
+    grandTotal: fresh.totalAmount,
+    at: now,
+    actor,
+  });
+}
+
 function maybeIssueTaxInvoice(order: OrderRecord, now: string, actor: string | null): void {
   const repo = getOrderRepository();
   const fresh = repo.getOrderByOrderId(order.orderId);
   if (!fresh) return;
+  if (fresh.depositMode === "credit") {
+    maybeIssueCreditTaxInvoice(fresh, now, actor);
+    return;
+  }
   if (fresh.paymentStatus !== "paid") return;
   const deliveredEnough =
     fresh.fulfillmentStatus === "warehouse" ||
@@ -247,13 +327,18 @@ export function createOrderFromQuote(input: CreateOrderFromQuoteInput): OrderRec
     amount: input.amount,
     vatMode: input.vatMode ?? "exclusive",
   });
+  const customer = quote.customerId ? getCustomerById(quote.customerId) : null;
+  const isCredit = input.depositMode === "credit";
+  const creditDays = isCredit
+    ? normalizeCreditDays(input.creditDays || customerCreditDays(quote.customerId) || DEFAULT_CREDIT_DAYS)
+    : 0;
   const deposit = calculateDepositPlan({
     grandTotal: vat.grandTotal,
     mode: input.depositMode ?? "auto",
     percent: input.depositPercent,
+    creditDays,
   });
 
-  const customer = quote.customerId ? getCustomerById(quote.customerId) : null;
   const billingName = (
     input.billingName ||
     customer?.billingName ||
@@ -319,12 +404,38 @@ export function createOrderFromQuote(input: CreateOrderFromQuoteInput): OrderRec
     depositAmount: deposit.depositAmount,
     remainingAmount: deposit.remainingAmount,
     paidAmount: 0,
-    paymentStatus: "deposit_due",
+    creditDays,
+    dueDate: null,
+    paymentStatus: isCredit ? "balance_due" : "deposit_due",
     fulfillmentStatus: "reserved",
     accessToken: randomBytes(18).toString("hex"),
     notes: input.notes?.trim() || deposit.reason,
     createdAt: now,
   });
+
+  if (isCredit) {
+    repo.insertEvent({
+      orderId: order.orderId,
+      eventType: "created",
+      message: `เปิดออเดอร์แบบเครดิต ${creditDays} วัน ยอดรวม ${vat.grandTotal.toFixed(2)} บาท (รวม VAT ${vat.vatRate}%) ไม่เก็บมัดจำ วางบิลเมื่อส่งของ`,
+      actor: input.actor ?? null,
+      createdAt: now,
+    });
+    if (quote.customerId) {
+      if (input.saveBillingDefaults) {
+        updateCustomer({
+          id: quote.customerId,
+          taxId: billingTaxId,
+          billingName,
+          billingAddress,
+          billingBranch,
+          defaultShipProvince: shipToProvince,
+        });
+      }
+      recomputeCustomerRollups(quote.customerId);
+    }
+    return repo.getOrderByOrderId(order.orderId) ?? order;
+  }
 
   issueDocument({
     type: "deposit_invoice",
@@ -490,6 +601,7 @@ export function confirmPayment(input: {
   const remaining = roundSatang(Math.max(0, order.totalAmount - paidAmount));
   let paymentStatus = order.paymentStatus;
   if (remaining <= 0) paymentStatus = "paid";
+  else if (order.depositMode === "credit") paymentStatus = "balance_due";
   else if (paidAmount + 0.001 >= order.depositAmount) paymentStatus = "deposit_paid";
   else paymentStatus = "deposit_due";
 
@@ -622,7 +734,13 @@ export function updateOrderFulfillment(input: {
   if (to !== "cancelled" && toIdx >= productionIdx && order.paidAmount + 0.001 < order.depositAmount) {
     throw new Error("deposit_required");
   }
-  if (to !== "cancelled" && toIdx >= shipIdx && order.paymentStatus !== "paid") {
+  const isCreditOrder = order.depositMode === "credit";
+  if (
+    to !== "cancelled" &&
+    toIdx >= shipIdx &&
+    order.paymentStatus !== "paid" &&
+    !isCreditOrder
+  ) {
     throw new Error("balance_required");
   }
 
@@ -659,6 +777,36 @@ export function updateOrderFulfillment(input: {
       message: goodsArrivedWithoutWarehouse
         ? "ส่งตรงลูกค้า — ออกใบแจ้งหนี้ส่วนที่เหลือ"
         : "สินค้าเข้าคลังแล้ว — ออกใบแจ้งหนี้ส่วนที่เหลือ",
+      actor: input.actor ?? null,
+      createdAt: now,
+    });
+  }
+
+  if (
+    isCreditOrder &&
+    !order.dueDate &&
+    (to === "out_for_delivery" || to === "delivered")
+  ) {
+    const days = order.creditDays > 0 ? order.creditDays : DEFAULT_CREDIT_DAYS;
+    const dueDate = computeDueDate(new Date(now), days);
+    repo.setDueDate(order.orderId, dueDate);
+    if (!repo.hasDocument(order.orderId, "balance_invoice")) {
+      issueDocument({
+        type: "balance_invoice",
+        order,
+        paymentId: null,
+        subtotalExVat: order.subtotalExVat,
+        vatAmount: order.vatAmount,
+        grandTotal: order.remainingAmount,
+        lineDescription: `ใบแจ้งหนี้/วางบิล เครดิต ${days} วัน ครบกำหนด ${dueDate} — ${order.productSummary}`,
+        now,
+      });
+    }
+    createOpenPayment(order, "remaining", order.remainingAmount);
+    repo.insertEvent({
+      orderId: order.orderId,
+      eventType: "invoice",
+      message: `ส่งของแล้ว — วางบิลเครดิต ${days} วัน ครบกำหนดชำระ ${dueDate}`,
       actor: input.actor ?? null,
       createdAt: now,
     });

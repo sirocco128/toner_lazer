@@ -46,6 +46,8 @@
     "vault:up": "docker compose up -d minio minio-replica minio-init minio-mirror clamav",
     "cms:media:minio": "node scripts/migrate-strapi-media-to-minio.mjs",
     "sop:screenshots": "node --experimental-strip-types scripts/capture-sop-screenshots.mjs",
+    "sim:toner": "node scripts/sim-toner.mjs",
+    "seed:toner-demo": "node scripts/seed-toner-demo.mjs",
     "toner:nexterp": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/sync-toner-nexterp.mjs"
   },
   "dependencies": {

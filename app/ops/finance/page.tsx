@@ -74,11 +74,11 @@ export default async function OpsFinancePage({
           </p>
           <h1 className="mt-2 text-2xl font-bold sm:text-3xl">กำไรขั้นต้นและวงจรรายได้</h1>
           <p className="mt-2 max-w-2xl text-sm text-paper/80">
-            {COMPANY.legalName} · จากใบเสนอราคา มัดจำ ใบสั่งโรงงานจีน จนถึงส่งลูกค้า
+            {COMPANY.legalName} · จากใบเสนอราคา ใบสั่งส่งตรงซัพพลายเออร์ จนถึงวางบิลและรับเงิน
             และลงบัญชีคู่ครบสมุด ผังบัญชี และงบจากสมุดให้ผู้ทำบัญชี
           </p>
           <p className="mt-3 text-sm text-brass-soft">
-            งวด {fromDate} — {toDate} · {pnl.orderCount} ออเดอร์ · มีใบสั่งโรงงาน {pnl.withPoCount} ใบ
+            งวด {fromDate} — {toDate} · {pnl.orderCount} ออเดอร์ · มีต้นทุนแล้ว {pnl.orderCount - pnl.missingCostCount} ออเดอร์
           </p>
         </div>
       </div>
@@ -130,7 +130,7 @@ export default async function OpsFinancePage({
 
       {pnl.missingCostCount > 0 ? (
         <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          มี {pnl.missingCostCount} ออเดอร์ที่ยังไม่มีต้นทุนโรงงาน — กำไรขั้นต้นงวดนี้สูงเกินจริงจนกว่าจะบันทึกใบสั่ง
+          มี {pnl.missingCostCount} ออเดอร์ที่ยังไม่มีต้นทุน (ยังไม่ส่งใบสั่งส่งตรง) — กำไรขั้นต้นงวดนี้สูงเกินจริงจนกว่าจะส่งใบสั่ง
         </p>
       ) : null}
 
@@ -169,7 +169,7 @@ export default async function OpsFinancePage({
         <article className="rounded-2xl border border-forest/10 bg-paper p-5 shadow-sm">
           <p className="text-xs text-ink/55">ต้นทุนขาย</p>
           <p className="mt-2 text-2xl font-semibold">{formatThb(pnl.cogsThb)}</p>
-          <p className="mt-1 text-xs text-ink/50">โรงงาน + ขนส่ง + นำเข้า</p>
+          <p className="mt-1 text-xs text-ink/50">ตลับจากซัพพลายเออร์ + กล่อง (+ โรงงาน/นำเข้า ถ้ามี)</p>
         </article>
         <article className="rounded-2xl border border-brass/40 bg-brass/10 p-5 shadow-sm">
           <p className="text-xs text-ink/55">กำไรขั้นต้น</p>
@@ -191,6 +191,7 @@ export default async function OpsFinancePage({
           <ol className="mt-4 space-y-3 text-sm">
             {[
               { label: "รายได้", amount: pnl.revenueExVat, tone: "bg-forest" },
+              { label: "ส่งตรง: ตลับ + กล่อง", amount: pnl.dropshipThb, tone: "bg-forest/80" },
               { label: "โรงงาน + ขนส่งในจีน", amount: pnl.factoryThb + pnl.inlandThb, tone: "bg-forest/70" },
               { label: "ขนส่งจีน–ไทย", amount: pnl.freightThb, tone: "bg-forest/55" },
               { label: "ภาษีนำเข้า / พิธีการ", amount: pnl.importThb, tone: "bg-forest/40" },

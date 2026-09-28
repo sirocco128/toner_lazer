@@ -244,6 +244,7 @@ for (const o of sim.orders) {
     stmt.event.run(at, e.id);
   }
   for (const j of stmt.journals.all(order.orderId)) {
+    if (String(j.source_key).startsWith("ds:")) continue; // already dated when sent to the supplier
     let at = deliverAt;
     if (String(j.source_key).startsWith("cash:")) at = credit ? payAt ?? deliverAt : iso(o.orderDay, 12);
     stmt.journal.run(at.slice(0, 10), at, j.entry_id);
@@ -252,6 +253,57 @@ for (const o of sim.orders) {
 
   n += 1;
   if (n % 50 === 0) console.log(`… ${n}/${sim.orders.length} orders`);
+}
+
+// Re-date generated IDs (RFQ/ORD/PAY/JE carry the day they were created, i.e. today)
+// to the backdated creation day, and rewrite every reference across all tables.
+{
+  const bkkYmd = (isoAt) =>
+    new Date(Date.parse(isoAt) + 7 * 3_600_000).toISOString().slice(0, 10).replace(/-/g, "");
+  const owners = [
+    ["quote_requests", "request_id"],
+    ["orders", "order_id"],
+    ["payments", "payment_id"],
+    ["journal_entries", "entry_id"],
+  ];
+  const map = new Map();
+  for (const [table, col] of owners) {
+    for (const r of db.prepare(`SELECT ${col} AS id, created_at FROM ${table}`).all()) {
+      const m = /^([A-Z]+)-(\d{8})-(.+)$/.exec(String(r.id));
+      if (!m || !r.created_at) continue;
+      const next = `${m[1]}-${bkkYmd(r.created_at)}-${m[3]}`;
+      if (next !== r.id) map.set(r.id, next);
+    }
+  }
+  if (map.size > 0) {
+    const tokenRe = /\b[A-Z]+-\d{8}-[0-9A-Za-z]+\b/g;
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")
+      .all()
+      .map((r) => r.name);
+    db.exec("PRAGMA foreign_keys = OFF");
+    db.exec("BEGIN");
+    for (const table of tables) {
+      const cols = db
+        .prepare(`PRAGMA table_info("${table}")`)
+        .all()
+        .filter((c) => /TEXT|CHAR|^$/i.test(String(c.type)))
+        .map((c) => c.name);
+      for (const col of cols) {
+        const rows = db
+          .prepare(`SELECT rowid AS rid, "${col}" AS v FROM "${table}" WHERE "${col}" GLOB '*[A-Z]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*'`)
+          .all();
+        if (rows.length === 0) continue;
+        const upd = db.prepare(`UPDATE "${table}" SET "${col}" = ? WHERE rowid = ?`);
+        for (const r of rows) {
+          const next = String(r.v).replace(tokenRe, (tok) => map.get(tok) ?? tok);
+          if (next !== r.v) upd.run(next, r.rid);
+        }
+      }
+    }
+    db.exec("COMMIT");
+    db.exec("PRAGMA foreign_keys = ON");
+  }
 }
 
 // Renumber billing documents so PREFIX-YYMM (Buddhist era) matches the backdated issue month.

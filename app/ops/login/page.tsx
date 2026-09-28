@@ -24,7 +24,7 @@ export default async function OpsLoginPage({
         เข้าสู่ระบบปฏิบัติการ
       </h1>
       <p className="mt-2 text-sm text-ink/70">
-        จัดการคำขอจากเว็บ Smart Gift ใบเสนอราคา ราคา สินค้า และวงจรออเดอร์ —
+        จัดการคำขอจากเว็บ Toner Lazer ใบเสนอราคา ราคา สินค้า และวงจรออเดอร์ —
         ลูกค้าใช้หน้าเว็บสาธารณะ ไม่ใช้หน้านี้
       </p>
       <OpsLoginForm googleError={params.error} />

@@ -52,11 +52,11 @@ export const ACCOUNT_HUB_TITLE = "ลูกค้าที่สั่งแล�
 
 export const ACCOUNT_HUB_NAV_HINT = "ติดตามออเดอร์ · แจ้งปัญหา";
 
-export const OPS_CONSOLE_TITLE = "Smart Gift";
+export const OPS_CONSOLE_TITLE = "Toner Lazer";
 
 export const OPS_CONSOLE_KICKER = "คอนโซลปฏิบัติการ";
 
-/** Short storefront label — staff chrome uses Smart Gift, not the buyer header. */
+/** Short storefront label — staff chrome uses the brand name, not the buyer header. */
 export const OPS_CONSOLE_NAV_LABEL = "พนักงาน";
 
 export const OPS_CONSOLE_NAV_HINT = "เข้าทำงาน — สำหรับพนักงาน";

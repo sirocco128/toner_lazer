@@ -45,7 +45,7 @@ export default async function OpsIndexPage() {
           href: "/ops/quotes?status=new",
           title: "คำขอใหม่",
           count: newQuotes,
-          body: "ใบเสนอราคาที่ยังไม่ได้ติดต่อ — รวมจากเว็บ Smart Gift",
+          body: "ใบเสนอราคาที่ยังไม่ได้ติดต่อ — รวมจากเว็บ Toner Lazer",
           hot: newQuotes > 0,
         }
       : null,
@@ -153,7 +153,7 @@ export default async function OpsIndexPage() {
           </div>
           {recentNew.length === 0 ? (
             <p className="mt-4 rounded-xl border border-dashed border-forest/20 px-4 py-6 text-center text-sm text-ink/60">
-              ยังไม่มีคำขอสถานะใหม่ — เมื่อลูกค้าส่งคำขอจากเว็บ Smart Gift
+              ยังไม่มีคำขอสถานะใหม่ — เมื่อลูกค้าส่งคำขอจากเว็บ Toner Lazer
               จะโผล่ที่นี่
             </p>
           ) : (

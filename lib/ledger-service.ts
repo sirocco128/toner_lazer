@@ -375,6 +375,47 @@ export function postRevenueRecognition(params: {
   }
 }
 
+/**
+ * Dropship cost (Color Fly packs and ships our box): recognized when the order
+ * is sent to the supplier. Dr COGS (goods + our box) / Cr supplier payable.
+ * Draft or cancelled dropships carry no cost.
+ */
+export function postDropshipCost(params: {
+  dropshipId: string;
+  orderId: string | null;
+  status: string;
+  supplierTotalThb: number;
+  boxTotalThb: number;
+  at: string;
+  actor?: string | null;
+}): void {
+  const sourceKey = `ds:${params.dropshipId}`;
+  if (params.status === "draft" || params.status === "cancelled") {
+    deleteJournalBySourceKey(sourceKey);
+    return;
+  }
+  const goods = roundSatang(params.supplierTotalThb);
+  const box = roundSatang(params.boxTotalThb);
+  upsertJournal({
+    sourceKey,
+    bookType: "purchase",
+    memo: `ต้นทุนส่งตรง · ${params.dropshipId}${params.orderId ? ` · ${params.orderId}` : ""}`,
+    orderId: params.orderId,
+    postedBy: params.actor,
+    at: params.at,
+    lines: [
+      { accountCode: ACCOUNT_CODES.factoryCogs, debit: goods, credit: 0, memo: "ค่าตลับหมึกจากซัพพลายเออร์" },
+      { accountCode: ACCOUNT_CODES.packingExpense, debit: box, credit: 0, memo: "กล่องแบรนด์เรา" },
+      {
+        accountCode: ACCOUNT_CODES.factoryPayable,
+        debit: 0,
+        credit: roundSatang(goods + box),
+        memo: "เจ้าหนี้ซัพพลายเออร์",
+      },
+    ],
+  });
+}
+
 export function postSupplierPayment(params: {
   payId: string;
   poId: string;

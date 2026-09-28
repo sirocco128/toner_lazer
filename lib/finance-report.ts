@@ -1,3 +1,4 @@
+import { dropshipCostByOrder } from "@/lib/dropship-repository";
 import { listFactoryPosByOrder } from "@/lib/factory-po-repository";
 import type { FactoryPoRecord } from "@/lib/factory-po-types";
 import { getOrderRepository } from "@/lib/order-repository";
@@ -18,6 +19,8 @@ export type OrderProfitRow = {
   importThb: number;
   packingThb: number;
   lastMileThb: number;
+  /** Dropship supplier goods + our box (Color Fly flow). */
+  dropshipThb: number;
   cogsThb: number;
   grossProfit: number;
   gpPct: number;
@@ -44,6 +47,7 @@ export type ExecutivePnl = {
   cogsThb: number;
   packingThb: number;
   lastMileThb: number;
+  dropshipThb: number;
   sellingExpenseThb: number;
   grossProfit: number;
   gpPct: number;
@@ -108,8 +112,11 @@ function sumCosts(pos: FactoryPoRecord[]): {
 function profitForOrder(order: OrderRecord): OrderProfitRow {
   const pos = activePos(listFactoryPosByOrder(order.orderId));
   const costs = sumCosts(pos);
+  const ds = dropshipCostByOrder(order.orderId);
+  const dropshipThb = roundSatang(ds.goodsThb + ds.boxThb);
+  const cogsThb = roundSatang(costs.cogsThb + dropshipThb);
   const revenueExVat = order.subtotalExVat;
-  const grossProfit = roundSatang(revenueExVat - costs.cogsThb);
+  const grossProfit = roundSatang(revenueExVat - cogsThb);
   const contribution = roundSatang(grossProfit - costs.sellingExpenseThb);
   const primary = pos[0] ?? null;
   return {
@@ -124,7 +131,8 @@ function profitForOrder(order: OrderRecord): OrderProfitRow {
     importThb: costs.importThb,
     packingThb: costs.packingThb,
     lastMileThb: costs.lastMileThb,
-    cogsThb: costs.cogsThb,
+    dropshipThb,
+    cogsThb,
     grossProfit,
     gpPct: gpPercent(revenueExVat, grossProfit),
     sellingExpenseThb: costs.sellingExpenseThb,
@@ -132,7 +140,7 @@ function profitForOrder(order: OrderRecord): OrderProfitRow {
     landedTotalThb: costs.landedTotalThb,
     poId: primary?.poId ?? null,
     poStatus: primary?.status ?? null,
-    missingCost: pos.length === 0 || costs.landedTotalThb <= 0,
+    missingCost: dropshipThb <= 0 && (pos.length === 0 || costs.landedTotalThb <= 0),
   };
 }
 
@@ -154,6 +162,7 @@ export function buildExecutivePnl(params: {
   const cogsThb = roundSatang(rows.reduce((sum, row) => sum + row.cogsThb, 0));
   const packingThb = roundSatang(rows.reduce((sum, row) => sum + row.packingThb, 0));
   const lastMileThb = roundSatang(rows.reduce((sum, row) => sum + row.lastMileThb, 0));
+  const dropshipThb = roundSatang(rows.reduce((sum, row) => sum + row.dropshipThb, 0));
   const sellingExpenseThb = roundSatang(
     rows.reduce((sum, row) => sum + row.sellingExpenseThb, 0),
   );
@@ -174,6 +183,7 @@ export function buildExecutivePnl(params: {
     cogsThb,
     packingThb,
     lastMileThb,
+    dropshipThb,
     sellingExpenseThb,
     grossProfit,
     gpPct: gpPercent(revenueExVat, grossProfit),
@@ -194,6 +204,7 @@ export function pnlToCsv(pnl: ExecutivePnl): string {
     "ขนส่งในจีน",
     "ขนส่งจีน-ไทย",
     "นำเข้า",
+    "ส่งตรง (ตลับ+กล่อง)",
     "ต้นทุนขาย",
     "กำไรขั้นต้น",
     "%GP",
@@ -215,6 +226,7 @@ export function pnlToCsv(pnl: ExecutivePnl): string {
         csvEscape(row.inlandThb.toFixed(2)),
         csvEscape(row.freightThb.toFixed(2)),
         csvEscape(row.importThb.toFixed(2)),
+        csvEscape(row.dropshipThb.toFixed(2)),
         csvEscape(row.cogsThb.toFixed(2)),
         csvEscape(row.grossProfit.toFixed(2)),
         csvEscape(row.gpPct.toFixed(2)),

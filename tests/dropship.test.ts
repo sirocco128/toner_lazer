@@ -169,6 +169,24 @@ describe("dropship repository (SQLite)", () => {
     assert.equal(sent.status, "sent");
     assert.ok(sent.sentAt);
 
+    // Sending to the supplier books the cost: Dr COGS + box / Cr supplier payable.
+    const { getDb } = await import("../lib/database");
+    const lines = getDb()
+      .prepare(
+        `SELECT l.debit, l.credit FROM journal_lines l
+           JOIN journal_entries e ON e.entry_id = l.entry_id
+          WHERE e.source_key = ?`,
+      )
+      .all(`ds:${a.dropshipId}`) as Array<{ debit: number; credit: number }>;
+    const debit = lines.reduce((s, l) => s + Number(l.debit), 0);
+    const credit = lines.reduce((s, l) => s + Number(l.credit), 0);
+    assert.equal(debit, a.supplierTotalThb + a.boxTotalThb);
+    assert.equal(credit, debit);
+    assert.deepEqual(repo.dropshipCostByOrder("ORD-1"), {
+      goodsThb: a.supplierTotalThb,
+      boxThb: a.boxTotalThb,
+    });
+
     assert.throws(
       () => repo.setDropshipStatus({ dropshipId: a.dropshipId, status: "shipped" }),
       /tracking_required/,

@@ -15,7 +15,7 @@ export default function OpsLoading() {
           </div>
         ))}
       </div>
-      <span className="sr-only">กำลังโหลดคอนโซล Smart Gift</span>
+      <span className="sr-only">กำลังโหลดคอนโซล Toner Lazer</span>
     </div>
   );
 }

@@ -122,7 +122,7 @@ export default async function OpsQuotesPage({
         <p className="mt-6 rounded-xl border border-forest/10 px-4 py-8 text-center text-sm text-ink/60">
           ยังไม่มีคำขอ
           {leadStatus === "new"
-            ? " สถานะใหม่ — เมื่อลูกค้าส่งจากเว็บ Smart Gift หรือแบบฟอร์ม จะขึ้นที่นี่"
+            ? " สถานะใหม่ — เมื่อลูกค้าส่งจากเว็บ Toner Lazer หรือแบบฟอร์ม จะขึ้นที่นี่"
             : null}
         </p>
       ) : (

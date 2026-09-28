@@ -3,6 +3,7 @@
  */
 
 import { getDb } from "@/lib/database";
+import { postDropshipCost } from "@/lib/ledger-service";
 import {
   canTransitionDropship,
   formatDropshipId,
@@ -282,5 +283,27 @@ export function setDropshipStatus(input: {
     );
   const updated = getDropshipOrder(input.dropshipId);
   if (!updated) throw new Error("dropship_not_found");
+  if (input.status === "sent" || input.status === "cancelled") {
+    postDropshipCost({
+      dropshipId: updated.dropshipId,
+      orderId: updated.orderId,
+      status: updated.status,
+      supplierTotalThb: updated.supplierTotalThb,
+      boxTotalThb: updated.boxTotalThb,
+      at: iso,
+    });
+  }
   return updated;
+}
+
+/** Supplier goods + box cost of every non-cancelled, non-draft dropship per order. */
+export function dropshipCostByOrder(orderId: string): { goodsThb: number; boxThb: number } {
+  const row = getDb()
+    .prepare(
+      `SELECT COALESCE(SUM(supplier_total_thb), 0) AS goods, COALESCE(SUM(box_total_thb), 0) AS box
+         FROM dropship_orders
+        WHERE order_id = ? AND status NOT IN ('draft', 'cancelled')`,
+    )
+    .get(orderId) as { goods: number; box: number } | undefined;
+  return { goodsThb: Number(row?.goods ?? 0), boxThb: Number(row?.box ?? 0) };
 }

@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
-  title: `${OPS_CONSOLE_TITLE} · ${OPS_CONSOLE_KICKER}`,
+  title: OPS_CONSOLE_KICKER,
 };
 
 export default async function OpsLayout({
